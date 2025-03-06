@@ -139,9 +139,9 @@ void create_screen_main() {
                     {
                         lv_obj_t *parent_obj = obj;
                         {
-                            // home_select_btn1
+                            // home_select_btn0
                             lv_obj_t *obj = lv_imgbtn_create(parent_obj);
-                            objects.home_select_btn1 = obj;
+                            objects.home_select_btn0 = obj;
                             lv_obj_set_pos(obj, 27, 0);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, 192);
                             lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_RELEASED, NULL, &img_goggles_grey_, NULL);
@@ -149,19 +149,9 @@ void create_screen_main() {
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE);
                         }
                         {
-                            // home_select_btn0
+                            // home_select_btn1
                             lv_obj_t *obj = lv_imgbtn_create(parent_obj);
-                            objects.home_select_btn0 = obj;
-                            lv_obj_set_pos(obj, 27, 207);
-                            lv_obj_set_size(obj, LV_SIZE_CONTENT, 192);
-                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_RELEASED, NULL, &img_helmet__grey_, NULL);
-                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_PRESSED, NULL, &img_helmet, NULL);
-                            lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE);
-                        }
-                        {
-                            // home_select_btn2
-                            lv_obj_t *obj = lv_imgbtn_create(parent_obj);
-                            objects.home_select_btn2 = obj;
+                            objects.home_select_btn1 = obj;
                             lv_obj_set_pos(obj, 278, 0);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, 192);
                             lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_RELEASED, NULL, &img_reflective_clothing__grey_, NULL);
@@ -169,13 +159,23 @@ void create_screen_main() {
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE);
                         }
                         {
-                            // home_select_btn3
+                            // home_select_btn2
                             lv_obj_t *obj = lv_imgbtn_create(parent_obj);
-                            objects.home_select_btn3 = obj;
+                            objects.home_select_btn2 = obj;
                             lv_obj_set_pos(obj, 528, 0);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, 192);
                             lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_RELEASED, NULL, &img_toe_cap_grey_, NULL);
                             lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_PRESSED, NULL, &img_toe_cap, NULL);
+                            lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+                        }
+                        {
+                            // home_select_btn3
+                            lv_obj_t *obj = lv_imgbtn_create(parent_obj);
+                            objects.home_select_btn3 = obj;
+                            lv_obj_set_pos(obj, 27, 207);
+                            lv_obj_set_size(obj, LV_SIZE_CONTENT, 192);
+                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_RELEASED, NULL, &img_helmet__grey_, NULL);
+                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_PRESSED, NULL, &img_helmet, NULL);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE);
                         }
                         {
@@ -235,7 +235,7 @@ void tick_screen_main() {
 
 
 static const char *screen_names[] = { "Main" };
-static const char *object_names[] = { "main", "tabview", "home_home", "home_home_use", "home_home_return", "home_home_maintain", "home_idcheck", "home_idcheck_ok", "home_idcheck_keyboard", "home_idcheck_textarea", "home_select", "home_select_btn1", "home_select_btn0", "home_select_btn2", "home_select_btn3", "home_select_text", "home_select_ok", "home_final", "home_final_text" };
+static const char *object_names[] = { "main", "tabview", "home_home", "home_home_use", "home_home_return", "home_home_maintain", "home_idcheck", "home_idcheck_ok", "home_idcheck_keyboard", "home_idcheck_textarea", "home_select", "home_select_btn0", "home_select_btn1", "home_select_btn2", "home_select_btn3", "home_select_text", "home_select_ok", "home_final", "home_final_text" };
 
 
 typedef void (*tick_screen_func_t)();

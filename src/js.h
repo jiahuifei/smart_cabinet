@@ -3,6 +3,6 @@
 
 #include <main.h>
 
-void js_publish_id(char* id);
+void js_publish_id(const char* id , const char* state);
 
 #endif /*MAIN_H*/

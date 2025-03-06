@@ -19,8 +19,8 @@ typedef struct _objects_t {
     lv_obj_t *home_idcheck_keyboard;
     lv_obj_t *home_idcheck_textarea;
     lv_obj_t *home_select;
-    lv_obj_t *home_select_btn1;
     lv_obj_t *home_select_btn0;
+    lv_obj_t *home_select_btn1;
     lv_obj_t *home_select_btn2;
     lv_obj_t *home_select_btn3;
     lv_obj_t *home_select_text;

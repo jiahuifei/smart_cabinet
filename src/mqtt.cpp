@@ -7,14 +7,18 @@ PubSubClient client(espClient);
 // WiFi
 const char *ssid = "306";
 const char *password = "123456789";
-
-// MQTT Broker
+// MQTT Broker配置
 const char *mqtt_broker = "39.98.181.107";
 const char *topic = "smart_cabinet/01";
 const char *mqtt_username = "emqx";
 const char *mqtt_password = "public";
 const int mqtt_port = 1883;
 
+// 定义全局变量
+bool user_id_received = false;
+bool item_states_received = false;
+
+//初始化mqtt
 void mqtt_initialize(){
     // 连接WIFI
     WiFi.begin(ssid, password);
@@ -44,6 +48,7 @@ void mqtt_initialize(){
     client.subscribe(topic);
 }
 
+// 回调函数
 void callback(char *topic, byte *payload, unsigned int length) {
   Serial.print("Message arrived in topic: ");
   Serial.println(topic);
@@ -52,26 +57,55 @@ void callback(char *topic, byte *payload, unsigned int length) {
   for (int i = 0; i < length; i++) {
       message += (char) payload[i];  // Convert *byte to string
   }
-  Serial.print(message);
-  // if (message == "on" && !ledState) {
-  //     digitalWrite(LED, HIGH);  // Turn on the LED
-  //     ledState = true;
-  // }
-  // if (message == "off" && ledState) {
-  //     digitalWrite(LED, LOW); // Turn off the LED
-  //     ledState = false;
-  // }
-  Serial.println();
+  Serial.println(message);
+
+  // 解析JSON消息
+  StaticJsonDocument<300> doc;
+  DeserializationError error = deserializeJson(doc, message);
+
+  if (error) {
+      Serial.print("deserializeJson() failed: ");
+      Serial.println(error.f_str());
+      return;
+  }
+  // 获取JSON中的数据并解析到borrowing_status_user数组中
+  JsonArray item_states = doc["user_id"];
+  for (int i = 0; i < item_states.size(); i++) {
+      int status = item_states[i];
+      borrowing_status_user[i] = status == 0 ? "0" : "1";
+  }
+
+  if (doc.containsKey("user_id")) {
+    const char* user_id = doc["user_id"];
+    Serial.print("user_id: ");
+    Serial.println(user_id);
+    user_id_received = true;
+  }
+
+  if (doc.containsKey("item_states")) {
+    JsonArray item_states = doc["item_states"];
+    for (int i = 0; i < item_states.size(); i++) {
+        int status = item_states[i];
+        borrowing_status_user[i] = status == 0 ? "0" : "1";
+    }
+    item_states_received = true;
+    Serial.print("item_states: ");
+    for (int i = 0; i < 4; i++) {
+        Serial.print(borrowing_status_user[i]);
+    }
+  }
   Serial.println("-----------------------");
 }
 
+//回调函数
 void mqttloop(){
   client.loop();
 }
+//发布消息
 void mqtt_publish(char *message){
   client.publish(topic, message);
 }
-
+//按键发布消息
 void button_check_send(lv_obj_t *button, char *message){
    // 全局或静态变量记录上一次状态
   static bool last_button_state = false;
@@ -116,3 +150,4 @@ void button_check_msgbox(
     last_button_state = current_state;
   }
 }
+
