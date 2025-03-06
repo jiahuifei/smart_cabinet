@@ -6,7 +6,9 @@
 #include "gt911.h"           // Header for touch screen operations (GT911)
 
 #include "lvgl_port.h"       // LVGL porting functions for integration
-//#include <demos/lv_demos.h>        // LVGL demo headers
+#include "misc/lv_log.h"
+
+
 
 //下载的库
 #include <WiFi.h>

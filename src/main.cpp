@@ -1,5 +1,11 @@
 #include <main.h>
 
+// 修改2：调整日志回调函数签名匹配LVGL要求
+void lvgl_log_print(const char * msg) { // 移除int level参数
+    Serial.printf("[LVGL] %s\n", msg);  // 简化输出格式
+}
+
+
 void setup()
 {
   Serial.begin(115200);
@@ -32,6 +38,7 @@ void setup()
   }
   lv_timer_create(timeout_callback_1, 500, NULL); // 500ms后执行超时回调函数
 
+  lv_log_register_print_cb(lvgl_log_print);
 
 }
 
@@ -41,3 +48,5 @@ void loop()
   mqttloop();
   super_loop();
 }
+
+
