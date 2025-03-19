@@ -40,6 +40,10 @@ void setup()
 
   lv_log_register_print_cb(lvgl_log_print);
 
+  RS485.begin(115200, SERIAL_8N1, RS485_RX_PIN, RS485_TX_PIN);
+  while (!RS485) {
+    delay(10); // Wait for initialization to succeed
+  }
 }
 
 void loop()
@@ -47,6 +51,11 @@ void loop()
   ui_tick();
   mqttloop();
   super_loop();
+  // Waiting for 485 data, cannot exceed 120 characters
+  if (RS485.available()) {
+    // Send the received data back
+    RS485.write(RS485.read());
+  }
 }
 
 
