@@ -3,6 +3,7 @@
 
 #include <main.h>
 
+
 void super_loop();
 void progress_bar_idcheck();
 void progress_bar_select();
@@ -17,5 +18,6 @@ struct MessageBoxInfo {
 
 extern const char *borrowing_status;         // 拿取状态(领用0.归还1，维修2)
 extern const char *borrowing_status_user[4]; // 物品拿取状态
+
 
 #endif /*MAIN_H*/

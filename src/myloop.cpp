@@ -1,17 +1,22 @@
 #include <main.h>
 
-const char *borrowing_status = "NULL"; // 0状态是领用，1状态是归还，2状态是维护
-// 创建一个用于存储四个物品拿取状态的数组
-const char *borrowing_status_user[4] = {"0", "0", "0", "0"}; // 0状态是领用，1状态是归还，2状态是维护
+// 操作状态定义
+#define STATUS_NULL "NULL"  // 初始状态
+#define STATUS_BORROW "0"   // 领用状态
+#define STATUS_RETURN "1"   // 归还状态
+#define STATUS_MAINTAIN "2" // 维护状态
 
-// 全局变量来跟踪当前阶段
-static int current_stage = 0;
-static int current_stage_s = 0;
-static lv_timer_t *timeout_timer = NULL;
+// 全局状态变量
+const char *borrowing_status = STATUS_NULL;  // 当前操作类型
+const char *borrowing_status_user[4] = {STATUS_BORROW, STATUS_BORROW, STATUS_BORROW, STATUS_BORROW};  // 物品状态数组
 
-// 超时时间（单位：毫秒），例如 30 秒
-#define TIMEOUT_MS 30000
-#define TIMEOUT_MS_OVERALL 300000
+// 流程控制
+static int current_stage = 0;  // 当前操作阶段
+static lv_timer_t *timeout_timer = NULL;  // 超时定时器
+
+// 超时配置（毫秒）
+#define TIMEOUT_MS 3000000         // 单步操作超时
+#define TIMEOUT_MS_OVERALL 30000000  // 整体流程超时
 
 // 全局状态说明：
 // borrowing_status - 当前操作类型："0"=领用，"1"=归还，"2"=维护
@@ -22,42 +27,56 @@ static lv_timer_t *timeout_timer = NULL;
 // 主循环处理函数
 void super_loop()
 {
-  // 主页按钮检测
+  // 主页（Tab 0）按钮处理
   if (lv_tabview_get_tab_act(objects.tabview) == 0)
   {
-    // 领用按钮按下处理
+    // 领用按钮处理：设置操作类型并跳转至身份验证页
     if (lv_obj_has_state(objects.home_home_use, LV_STATE_PRESSED)) 
     {
-      borrowing_status = "0";
-      lv_tabview_set_act(objects.tabview, 1, LV_ANIM_ON); // 切换到身份验证页
-      lv_obj_invalidate(lv_scr_act()); // 强制界面重绘
-    }
-    if (lv_obj_has_state(objects.home_home_return, LV_STATE_PRESSED))
-    {
-
-      borrowing_status = "1";
+      Serial.println("[Action] Borrow operation selected");
+      borrowing_status = STATUS_BORROW;
       lv_tabview_set_act(objects.tabview, 1, LV_ANIM_ON);
       lv_obj_invalidate(lv_scr_act());
     }
+    // 归还按钮处理
+    if (lv_obj_has_state(objects.home_home_return, LV_STATE_PRESSED))
+    {
+      Serial.println("[Action] Return operation selected");
+      borrowing_status = STATUS_RETURN;
+      lv_tabview_set_act(objects.tabview, 1, LV_ANIM_ON);
+      lv_obj_invalidate(lv_scr_act());
+    }
+    // 维护按钮处理
     if (lv_obj_has_state(objects.home_home_maintain, LV_STATE_PRESSED))
     {
-      borrowing_status = "2";
+      Serial.println("[Action] Maintenance operation selected");
+      borrowing_status = STATUS_MAINTAIN;
       lv_tabview_set_act(objects.tabview, 1, LV_ANIM_ON);
       lv_obj_invalidate(lv_scr_act());
     }
   }
   
-  // 分页状态机
+  // 分页状态机（处理不同标签页的逻辑）
   switch (lv_tabview_get_tab_act(objects.tabview))
   {
-  case 1: // 身份验证页
+  case 1: // 身份验证页（Tab 1）
     if (lv_obj_has_state(objects.home_idcheck_ok, LV_STATE_PRESSED))
     {
+      // // 清理现有计时器防止重复创建
+      // if(timeout_timer) {
+      //   lv_timer_del(timeout_timer);
+      //   timeout_timer = NULL;
+      // }
+      
+      // // 创建30秒操作超时计时器
+      // timeout_timer = lv_timer_create(timeout_callback_1, TIMEOUT_MS, NULL);
+      
+      // MQTT通信：发送用户ID和操作类型
       const char *idcheck_text = lv_textarea_get_text(objects.home_idcheck_textarea);
-      js_publish_id(idcheck_text, borrowing_status); // 通过MQTT发送用户ID
+      js_publish_id(idcheck_text, borrowing_status); 
       lv_textarea_set_text(objects.home_idcheck_textarea, "");  // 清空输入框
       
-      // 等待物品状态更新
+      // 等待物品状态更新（来自MQTT回调）
       if (item_states_received) {
         current_stage = 2; // 推进到物品选择阶段
         item_states_received = false;
@@ -65,21 +84,51 @@ void super_loop()
     }
     break;
     
-  case 2: // 物品选择页
+  case 2: // 物品选择页（Tab 2）
+    // 遍历处理四个物品按钮的点击状态
+    for(int i=0; i<4; i++){
+      lv_obj_t *btn = ((lv_obj_t*[]){objects.home_select_btn0, objects.home_select_btn1, 
+                    objects.home_select_btn2, objects.home_select_btn3})[i];
+      if(lv_obj_has_state(btn, LV_STATE_PRESSED)){
+        // 切换物品选择状态（0=未选，1=已选）
+        borrowing_status_user[i] = (strcmp(borrowing_status_user[i], STATUS_BORROW) == 0) ? STATUS_RETURN : STATUS_BORROW;
+        lv_obj_clear_state(btn, LV_STATE_PRESSED); // 清除按钮按下状态
+        Serial.printf("[Action] Item %d status changed to %s\n", i, borrowing_status_user[i]);
+      }
+    }
+    
+    // 确认按钮处理
     if (lv_obj_has_state(objects.home_select_ok, LV_STATE_PRESSED)) 
     {
-      // 初始化所有物品为未选择状态
-      for (int i = 0; i < 4; i++) {
-          borrowing_status_user[i] = "0";
+      // 有效性检查：至少选择一个物品
+      bool hasSelection = false;
+      for(int i=0; i<4; i++){
+        if(strcmp(borrowing_status_user[i], STATUS_RETURN) == 0){
+          hasSelection = true;
+          break;
+        }
       }
-      update_select_page(borrowing_status_user); // 更新界面状态
-      lv_tabview_set_act(objects.tabview, 3, LV_ANIM_ON); // 进入完成页
+      
+      if(!hasSelection) {
+        Serial.println("[Warning] No items selected");
+        break; // 无选择时中止操作
+      }
+      
+      Serial.println("[Action] Selection confirmed, proceeding to completion page");
+      
+      // 重置物品选择状态并更新界面
+      for (int i = 0; i < 4; i++) {
+          borrowing_status_user[i] = STATUS_BORROW;
+      }
+      update_select_page(borrowing_status_user); 
+      lv_tabview_set_act(objects.tabview, 3, LV_ANIM_ON); // 跳转至完成页
     }
     break;
     
-  case 3: // 完成页
-    // 启动5分钟超时计时器（300,000毫秒）
+  case 3: // 完成页（Tab 3）
+    // 创建5分钟全局超时计时器（仅当不存在时创建）
     if (timeout_timer == NULL) {
+      Serial.println("[Timer] Creating overall timeout timer");
       timeout_timer = lv_timer_create(timeout_callback_1, TIMEOUT_MS_OVERALL, NULL);
     }
     break;
@@ -111,21 +160,44 @@ void update_select_page(const char *borrowing_status_things[4])
   }
 }
 
-// 全局超时回调函数
+// 超时处理回调函数
 void timeout_callback_1(lv_timer_t * timer)
 {
-  // 检测5分钟无操作且不在主页时执行复位
-  if (lv_disp_get_inactive_time(NULL) > TIMEOUT_MS_OVERALL && lv_tabview_get_tab_act(objects.tabview) != 0)
-  {
-    if (lvgl_port_lock(-1)) {
-      lv_tabview_set_act(objects.tabview, 0, LV_ANIM_ON); // 返回主页
-      
-      // 复位所有状态
-      for (int i = 0; i < 4; i++) {
-        borrowing_status_user[i] = "0";
-      }
-      lv_textarea_set_text(objects.home_idcheck_textarea, ""); // 清空身份验证输入框
-      lvgl_port_unlock();
+  Serial.println("[Timeout] Timer callback triggered");
+
+  // 处理定时器自动销毁
+  if(timer->user_data != NULL){
+    Serial.println("[Timeout] Cleaning up timer resources");
+    lv_timer_del(timer);
+    timeout_timer = NULL;
+    return;
+  }
+
+  // 只在非主页时处理超时
+  if(lv_tabview_get_tab_act(objects.tabview) == 0) {
+    return;
+  }
+  
+  // 统一超时处理
+  if (lvgl_port_lock(-1)) {
+    Serial.println("[Timeout] Resetting system state");
+    
+    // 重置UI状态
+    lv_tabview_set_act(objects.tabview, 0, LV_ANIM_ON);
+    lv_textarea_set_text(objects.home_idcheck_textarea, "");
+    
+    // 重置业务状态
+    borrowing_status = STATUS_NULL;
+    for (int i = 0; i < 4; i++) {
+      borrowing_status_user[i] = STATUS_BORROW;
     }
+    
+    // 更新界面
+    update_select_page(borrowing_status_user);
+    
+    lvgl_port_unlock();
+    Serial.println("[Timeout] System state reset completed");
+  } else {
+    Serial.println("[Error] Failed to acquire LVGL lock in timeout handler");
   }
 }

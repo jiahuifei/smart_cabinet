@@ -9,10 +9,15 @@
 #define INVALID   "关"    // 修改前为"无效"
 
 // 工具函数：将字节数组转换为十六进制字符串
-void toHexString(uint8_t *data, int length, char *result) {
+void toHexString(uint8_t *data, int length, char *result, size_t buf_size) {
+    if (buf_size < (size_t)length * 3) {
+        strncpy(result, "BUFFER_TOO_SMALL", buf_size-1);
+        return;
+    }
     for (int i = 0; i < length; i++) {
         sprintf(result + i * 3, "%02X ", data[i]);
     }
+    result[length*3 - 1] = '\0'; // 确保终止符
 }
 
 // 工具函数：将十六进制字符串转换为字节数组
@@ -34,7 +39,8 @@ bool sendData(uint8_t *data, int size, char *rsMsg) {
     if (RS485.available()) {
         uint8_t buffer[128];
         int len = RS485.readBytes(buffer, sizeof(buffer));
-        toHexString(buffer, len, rsMsg);
+        // 添加缓冲区长度参数（根据main.cpp中result数组的32字节长度）
+        toHexString(buffer, len, rsMsg, 32); // 修改调用方式
         return true;
     } else {
         strcpy(rsMsg, OVERTIME);
@@ -117,6 +123,7 @@ bool openLock(uint8_t boardNo, uint8_t lockNo, char *rsMsg) {
 //       rsMsg[OUT]  返回消息缓冲区
 // 返回：true-操作成功 / false-操作失败
 bool openAllLock(uint8_t boardNo, char *rsMsg) {
+    
     return lockCmd(0x9D, boardNo, 0x02, rsMsg);
 }
 

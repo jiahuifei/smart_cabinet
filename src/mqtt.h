@@ -17,6 +17,12 @@ void button_check_msgbox(lv_obj_t *button, const char* btns[] = nullptr, const  
 // 全局变量或函数指针
 extern bool user_id_received;
 extern bool item_states_received;
+void update_ui(uint8_t door_num, uint8_t item_type, const char* user_id);
+void handle_auth_error(int error_code);
 
+// 添加UI更新函数声明
+void update_ui(uint8_t user_id, uint8_t door_num, const char* valid_until);
+// 添加认证错误处理函数声明
+void handle_auth_error(int error_code);
 
 #endif // MQTT_H
