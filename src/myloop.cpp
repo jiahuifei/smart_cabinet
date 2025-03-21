@@ -62,20 +62,13 @@ void super_loop()
   case 1: // 身份验证页（Tab 1）
     if (lv_obj_has_state(objects.home_idcheck_ok, LV_STATE_PRESSED))
     {
-      // // 清理现有计时器防止重复创建
-      // if(timeout_timer) {
-      //   lv_timer_del(timeout_timer);
-      //   timeout_timer = NULL;
-      // }
-      
-      // // 创建30秒操作超时计时器
-      // timeout_timer = lv_timer_create(timeout_callback_1, TIMEOUT_MS, NULL);
-      
       // MQTT通信：发送用户ID和操作类型
       const char *idcheck_text = lv_textarea_get_text(objects.home_idcheck_textarea);
-      js_publish_id(idcheck_text, borrowing_status); 
-      lv_textarea_set_text(objects.home_idcheck_textarea, "");  // 清空输入框
-      
+      Serial.printf("[Action] User ID: %s, Operation: %s\n", idcheck_text, borrowing_status);
+      // 发送用户ID和操作类型
+      send_user_auth(idcheck_text, borrowing_status);
+      // 清空输入框
+      lv_textarea_set_text(objects.home_idcheck_textarea, "");  
       // 等待物品状态更新（来自MQTT回调）
       if (item_states_received) {
         current_stage = 2; // 推进到物品选择阶段
@@ -116,9 +109,33 @@ void super_loop()
       
       Serial.println("[Action] Selection confirmed, proceeding to completion page");
       
+      // 开启对应柜门
+      for (int i = 0; i < 4; i++) {
+        if (strcmp(borrowing_status_user[i], STATUS_RETURN) == 0) {
+          char rsMsg[32];
+          bool result = openLock(1, i + 1, rsMsg); // 假设所有物品都在第1块控制板上
+          if (result) {
+            Serial.printf("[Action] Door %d opened successfully\n", i + 1);
+          } else {
+            Serial.printf("[Error] Failed to open door %d: %s\n", i + 1, rsMsg);
+          }
+        }
+      }
+      
+      // 发送操作结果到服务器
+      JsonDocument doc;
+      doc["operation_type"] = borrowing_status;
+      JsonArray items = doc.createNestedArray("items");
+      for (int i = 0; i < 4; i++) {
+        items.add(borrowing_status_user[i]);
+      }
+      char buffer[256];
+      serializeJson(doc, buffer);
+      mqtt_publish(buffer);
+      
       // 重置物品选择状态并更新界面
       for (int i = 0; i < 4; i++) {
-          borrowing_status_user[i] = STATUS_BORROW;
+        borrowing_status_user[i] = STATUS_BORROW;
       }
       update_select_page(borrowing_status_user); 
       lv_tabview_set_act(objects.tabview, 3, LV_ANIM_ON); // 跳转至完成页

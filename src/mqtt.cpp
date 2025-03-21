@@ -136,6 +136,8 @@ void send_heartbeat() {
   char buffer[256];
   serializeJson(doc, buffer);
   client.publish(String("/device/" DEVICE_ID "/heartbeat").c_str(), buffer);
+  Serial.println(String("/device/" DEVICE_ID "/heartbeat").c_str());
+  Serial.println(buffer);
   
   last_send = millis();
 }
@@ -258,43 +260,71 @@ void callback(char* topic, byte* payload, unsigned int length) {
       }
   }
   
-  // 用户认证响应处理
+  // 用户认证响应处理部分
   else if(String(topic) == String("/server/" DEVICE_ID "/auth_response")) {
-      if(doc["status"] == 200) {
-          // 更新用户界面状态
-          update_ui(
-              doc["user_info"]["user_id"],
-              doc["door_assignment"]["primary"],
-              doc["valid_until"]
-          );
-      } else {
-          handle_auth_error(doc["error_code"]);
+    // 提取关联ID用于追踪请求
+    const char* correlation_id = doc["correlation_id"]; 
+    Serial.printf("处理认证响应: %s\n", correlation_id);
+    
+    if(doc["status"] == 200) {
+      // 解析用户信息
+      JsonObject user_info = doc["user_info"];
+      const char* user_id = user_info["user_id"];
+      const char* reservation_id = user_info["reservation_id"];
+      
+      // 解析物品状态数组
+      JsonArray item_states = user_info["item_states"];
+      for (int i = 0; i < item_states.size() && i < 4; i++) {
+      borrowing_status_user[i] = item_states[i] == 0 ? "0" : "1";
       }
+      item_states_received = true;
+      
+      // 解析门分配信息
+      JsonObject door_assignment = doc["door_assignment"];
+      uint8_t primary_door = door_assignment["primary"];
+      uint8_t secondary_door = door_assignment["secondary"].isNull() ? 0xFF : door_assignment["secondary"]; // 修复containsKey
+      
+      // 更新界面并记录有效期
+      // 修复参数类型匹配问题
+      update_ui(
+      user_id,
+      reservation_id,
+      primary_door,
+      secondary_door,
+      doc["valid_until"]
+      );
+    } 
+    else {
+      // 修复三元运算符类型不匹配问题
+      const char* error_detail = doc["error_detail"].isNull() ? "未知错误" : doc["error_detail"].as<const char*>();
+      // 使用单参数版本的handle_auth_error
+      handle_auth_error(doc["error_code"]);
+    }
   }
   
-  // 保留原始JSON处理逻辑
+  // JSON处理逻辑
   else {
-      // 原始user_id和item_states处理逻辑
-      if (doc["user_id"].is<const char*>()) {
-          const char* user_id = doc["user_id"];
-          Serial.print("user_id: ");
-          Serial.println(user_id);
-          user_id_received = true;
-      }
+    //   // 原始user_id和item_states处理逻辑
+    //   if (doc["user_id"].is<const char*>()) {
+    //       const char* user_id = doc["user_id"];
+    //       Serial.print("user_id: ");
+    //       Serial.println(user_id);
+    //       user_id_received = true;
+    //   }
 
-      if (doc["item_states"].is<JsonArray>()) {
-        JsonArray item_states = doc["item_states"];
-        for (int i = 0; i < item_states.size() && i < 4; i++) {  // 限制为4个元素
-            int status = item_states[i];
-            // 修改为使用已定义的数组
-            borrowing_status_user[i] = status == 0 ? "0" : "1";
-        }
-        item_states_received = true;
-        Serial.print("item_states: ");
-        for (int i = 0; i < 4; i++) {
-            Serial.print(borrowing_status_user[i]);
-        }
-    }
+    //   if (doc["item_states"].is<JsonArray>()) {
+    //     JsonArray item_states = doc["item_states"];
+    //     for (int i = 0; i < item_states.size() && i < 4; i++) {  // 限制为4个元素
+    //         int status = item_states[i];
+    //         // 修改为使用已定义的数组
+    //         borrowing_status_user[i] = status == 0 ? "0" : "1";
+    //     }
+    //     item_states_received = true;
+    //     Serial.print("item_states: ");
+    //     for (int i = 0; i < 4; i++) {
+    //         Serial.print(borrowing_status_user[i]);
+    //     }
+    // }
   }
 }
 
@@ -336,19 +366,27 @@ send_device_register(); // 发送注册信息
 void mqttloop() {
   client.loop();
   send_heartbeat(); // 定期发送心跳
-  static unsigned long last_report = 0;
-  if(millis() - last_report > 5000) { // 5秒上报
-      report_door_status(0, FREE, 0); // 添加默认参数 
-      last_report = millis();
-  }
+  // static unsigned long last_report = 0;
+  // if(millis() - last_report > 5000) { // 5秒上报
+  //     report_door_status(0, FREE, 0); // 添加默认参数 
+  //     last_report = millis();
+  // }
+
 }
 
 // UI更新函数（认证成功时自动调用）
-// 参数：user_id-用户ID，door_num-分配柜门，valid_until-有效期
-void update_ui(uint8_t user_id, uint8_t door_num, const char* valid_until) {
+// 参数：user_id-用户ID，reservation_id-预定ID，primary_door-主柜门，secondary_door-备用柜门，valid_until-有效期
+void update_ui(const char* user_id, const char* reservation_id, uint8_t primary_door, uint8_t secondary_door, const char* valid_until) {
   // 实现具体的UI更新逻辑
-  Serial.printf("更新用户界面: 用户ID=%d, 分配柜门=%d, 有效期=%s\n", 
-               user_id, door_num, valid_until);
+  Serial.printf("更新用户界面: 用户ID=%s, 预定号=%s\n主门=%d, 备门=%d, 有效期=%s\n", 
+               user_id, reservation_id, primary_door, secondary_door, valid_until);
+}
+
+// 认证错误处理（添加错误详情参数）
+void handle_auth_error(int error_code, const char* error_detail) {
+  Serial.printf("认证错误[%d]: %s\n", error_code, error_detail);
+  lv_obj_t* msgbox = lv_msgbox_create(NULL, "认证失败", error_detail, NULL, true);
+  lv_obj_center(msgbox);
 }
 
 // 认证错误处理（认证失败时自动调用）
@@ -358,4 +396,22 @@ void handle_auth_error(int error_code) {
   Serial.printf("认证错误代码: %d\n", error_code);
   lv_obj_t* msgbox = lv_msgbox_create(NULL, "认证失败", "请检查用户权限", NULL, true);
   lv_obj_center(msgbox);
+}
+
+// 用户认证请求函数（应在用户输入信息后调用）
+// 参数：phone_suffix-手机号后四位，auth_type-认证类型(borrow/return)
+// 使用示例：send_user_auth("6789", "borrow");
+void send_user_auth(const char* phone_suffix, const char* auth_type) {
+  JsonDocument doc;
+  doc["msg_id"] = "AUTH_" + String(millis()); // 生成唯一消息ID
+  doc["phone_suffix"] = phone_suffix;
+  doc["auth_type"] = auth_type;
+  doc["device_id"] = DEVICE_ID;
+  doc["timestamp"] = millis();
+
+  char buffer[256];
+  serializeJson(doc, buffer);
+  client.publish("/device/" DEVICE_ID "/user_auth", buffer);
+  Serial.println("/device/" DEVICE_ID "/user_auth");
+  Serial.println(buffer);
 }
