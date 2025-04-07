@@ -57,7 +57,6 @@ void loop()
   }
   mqttloop();        // 可能涉及UI操作
   super_loop();      // 可能涉及UI操作
-  
 }
 
 

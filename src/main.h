@@ -21,14 +21,10 @@
 #include <vars.h>
 
 //自己写的库
-#include <mqtt.h>
-#include <myloop.h>
-#include <js.h>
+#include "mqtt.h"
+#include "myloop.h"
+#include "js.h"
 #include "openlock.h"
-
-
-
-
 
 /*
  若要使用LVGL内置示例和演示，请取消下方对应的include注释

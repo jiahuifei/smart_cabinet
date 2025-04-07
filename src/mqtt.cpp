@@ -275,7 +275,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
       // 解析物品状态数组
       JsonArray item_states = user_info["item_states"];
       for (int i = 0; i < item_states.size() && i < 4; i++) {
-      borrowing_status_user[i] = item_states[i] == 0 ? "0" : "1";
+      itemStatusList[i] = item_states[i] == 0 ? "0" : "1";
       }
       item_states_received = true;
       
@@ -317,12 +317,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
     //     for (int i = 0; i < item_states.size() && i < 4; i++) {  // 限制为4个元素
     //         int status = item_states[i];
     //         // 修改为使用已定义的数组
-    //         borrowing_status_user[i] = status == 0 ? "0" : "1";
+    //         itemStatusList[i] = status == 0 ? "0" : "1";
     //     }
     //     item_states_received = true;
     //     Serial.print("item_states: ");
     //     for (int i = 0; i < 4; i++) {
-    //         Serial.print(borrowing_status_user[i]);
+    //         Serial.print(itemStatusList[i]);
     //     }
     // }
   }

@@ -16,8 +16,9 @@ struct MessageBoxInfo {
     lv_timer_t* timer;
 };
 
-extern const char *borrowing_status;         // 拿取状态(领用0.归还1，维修2)
-extern const char *borrowing_status_user[4]; // 物品拿取状态
+extern const char *currentOperationType;// 当前执行的操作类型
+extern const char *itemStatusList[4];// 四个物品的状态数组
+
 
 
 #endif /*MAIN_H*/
