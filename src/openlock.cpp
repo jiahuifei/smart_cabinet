@@ -111,7 +111,7 @@ bool lockCmd(uint8_t cmdNo, uint8_t boardNo, uint8_t lockNo, char *rsMsg) {
 
 // 1. 单个开锁（协议指令0x8A）
 // 参数：boardNo[IN] 板地址(0x01-0x20) 
-//       lockNo[IN]  锁地址(0x01-0x18)
+//       lockNo[IN]  锁地址(0x01-0x25)
 //       rsMsg[OUT]  返回消息缓冲区（至少32字节）
 // 返回：true-操作成功 / false-操作失败
 bool openLock(uint8_t boardNo, uint8_t lockNo, char *rsMsg) {
@@ -160,5 +160,44 @@ bool getState(uint8_t boardNo, uint8_t lockNo, char *rsMsg) {
 // 返回：true-获取成功 / false-获取失败
 bool getAllState(uint8_t boardNo, char *rsMsg) {
     return lockCmd(0x80, boardNo, 0x00, rsMsg);
+}
+
+
+
+// 通过锁ID直接开锁
+// 参数：lockId - 锁ID(0-48)
+// 返回：true-操作成功 / false-操作失败
+bool directOpenLockById(int lockId) {
+    char rsMsg[32]; // 内部处理结果缓冲区
+    uint8_t boardNo = 0;
+    uint8_t lockNo = 0;
+    
+    // 根据锁ID映射板地址和锁地址
+    if (lockId >= 1 && lockId <= 24) {
+        // 0x02板的1-24号锁
+        boardNo = 0x02;
+        lockNo = lockId;
+    } else if (lockId >= 25 && lockId <= 36) {
+        // 0x03板的1-12号锁
+        boardNo = 0x03;
+        lockNo = lockId - 24;
+    } else if (lockId >= 37 && lockId <= 48) {
+        // 0x01板的1-12号锁
+        boardNo = 0x01;
+        lockNo = lockId - 36;
+    } else if (lockId == 0) {
+        // 特殊ID 0 - 全开门锁
+        bool allSuccess = true;
+        for (uint8_t board = 0x01; board <= 0x03; board++) {
+            if (!openAllLock(board, rsMsg)) {
+                allSuccess = false;
+            }
+        }
+        return allSuccess;
+    } else {
+        return false;
+    }
+    
+    return openLock(boardNo, lockNo, rsMsg);
 }
 

@@ -16,5 +16,6 @@ bool openPower(uint8_t boardNo, uint8_t lockNo, char *rsMsg);
 bool closePower(uint8_t boardNo, uint8_t lockNo, char *rsMsg);
 bool getState(uint8_t boardNo, uint8_t lockNo, char *rsMsg);
 bool getAllState(uint8_t boardNo, char *rsMsg);
+bool directOpenLockById(int lockId);
 
 #endif // !1
