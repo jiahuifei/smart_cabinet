@@ -5,6 +5,7 @@ void lvgl_log_print(const char * msg) { // 移除int level参数
     Serial.printf("[LVGL] %s\n", msg);  // 简化输出格式
 }
 
+
 void setup()
 {
   Serial.begin(115200);
@@ -57,6 +58,7 @@ void loop()
   }
   mqttloop();        // 可能涉及UI操作
   super_loop();      // 可能涉及UI操作
+
 }
 
 

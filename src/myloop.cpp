@@ -24,6 +24,8 @@ static lv_timer_t *operationTimeoutTimer = NULL;  // 操作超时计时器
 #define TIMEOUT_MS_OVERALL 3000000      // 单步操作超时时间(5分钟)
 #define TOTAL_PROCESS_TIMEOUT_MS 30000000    // 整体流程超时时间(50分钟)
 
+
+
 /**
  * 处理主页按钮点击事件
  * @param operationName 操作名称(用于日志)
@@ -124,7 +126,7 @@ static void handle_selection_confirmation() {
   update_select_page(itemStatusList); 
   lv_tabview_set_act(objects.tabview, 3, LV_ANIM_ON);
 }
-
+char result[32];
 // 主循环处理函数
 void super_loop()
 {
@@ -160,6 +162,11 @@ void super_loop()
       
     if (lv_obj_has_state(objects.home_select_ok, LV_STATE_PRESSED)) {
         handle_selection_confirmation();
+        //openAllLock(0x01, result);
+        openLock(0x01, 0x01, result);
+        openLock(0x02, 0x01, result);
+        openLock(0x03, 0x01, result);
+
     }
     break;
     
