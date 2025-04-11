@@ -188,11 +188,18 @@ bool directOpenLockById(int lockId) {
     } else if (lockId == 0) {
         // 特殊ID 0 - 全开门锁
         bool allSuccess = true;
-        for (uint8_t board = 0x01; board <= 0x03; board++) {
-            if (!openAllLock(board, rsMsg)) {
-                allSuccess = false;
-            }
-        }
+        //单独设置内存空间
+        char rsMsg1[32];
+        openAllLock(0x01, rsMsg1);
+        delay(5000);
+        //单独设置内存空间
+        char rsMsg2[32];
+        openAllLock(0x02, rsMsg2);
+        delay(5000);
+        //单独设置内存空间
+        char rsMsg3[32];
+        openAllLock(0x03, rsMsg3);
+        delay(5000);
         return allSuccess;
     } else {
         return false;
