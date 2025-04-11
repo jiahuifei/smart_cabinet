@@ -5,28 +5,7 @@ void lvgl_log_print(const char * msg) { // 移除int level参数
     Serial.printf("[LVGL] %s\n", msg);  // 简化输出格式
 }
 
-void manage_btn_event_handler(lv_event_t * e) {
-  lv_obj_t * target = lv_event_get_target(e);
-  
-  // 检查是否是管理页面的按钮(0-48)
-  for(int i = 0; i <= 48; i++) {
-      char btn_name[20];
-      sprintf(btn_name, "manage_btn_%d", i);
-      
-      if(target == objects.manage_btn_0 + i) {  // 假设按钮是按顺序排列的
-          directOpenLockById(i);  // 按钮编号直接对应锁ID
-          break;
-      }
-  }
-}
 
-// 在初始化时添加事件监听器
-void setup_manage_buttons() {
-  for(int i = 0; i <= 48; i++) {
-      lv_obj_t * btn = objects.manage_btn_0 + i;  // 假设按钮是按顺序排列的
-      lv_obj_add_event_cb(btn, manage_btn_event_handler, LV_EVENT_CLICKED, NULL);
-  }
-}
 
 
 void setup()
@@ -67,7 +46,6 @@ void setup()
   while (!RS485) {
     delay(10); // Wait for initialization to succeed
   }
-  setup_manage_buttons();
 }
 
 
