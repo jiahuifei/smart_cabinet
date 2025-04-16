@@ -162,8 +162,6 @@ bool getAllState(uint8_t boardNo, char *rsMsg) {
     return lockCmd(0x80, boardNo, 0x00, rsMsg);
 }
 
-
-
 // 通过锁ID直接开锁
 // 参数：lockId - 锁ID(0-48)
 // 返回：true-操作成功 / false-操作失败
