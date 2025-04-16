@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <title>ESP设备配置</title>
+    <script>
+    function c(l,e) {
+    	console.log(l);
+    	// 阻止默认事件
+        document.getElementById('s').value = l.innerText || l.textContent;
+        p = l.nextElementSibling.classList.contains("l");
+        document.getElementById('p').disabled = !p;
+        if(p)document.getElementById('p').focus();
+        return false;
+    }
+    </script>
+
+<style>
+/* 样式部分保持不变 */
+.c,
+body {
+    text-align: center
+}
+
+div,
+input {
+    padding: 5px;
+    font-size: 1em
+}
+
+input {
+    width: 95%
+}
+
+body {
+    font-family: verdana
+}
+
+button {
+    border: 0;
+    border-radius: .3rem;
+    background-color: #1fa3ec;
+    color: #fff;
+    line-height: 2.4rem;
+    font-size: 1.2rem;
+    width: 100%
+}
+
+a {
+    color: #000;
+    font-weight: 700;
+    text-decoration: none
+}
+
+a:hover {
+    color: #1fa3ec;
+    text-decoration: underline
+}
+
+.q {
+    height: 16px;
+    margin: 0;
+    padding: 0 5px;
+    text-align: right;
+    min-width: 38px
+}
+
+/* 其余CSS样式保持不变... */
+
+input:disabled {
+    opacity: 0.5;
+}
+</style>
+</head>
+
+<body>
+    <div class="qr" style='text-align:left;display:inline-block;min-width:260px;'>
+        <!-- WiFi接入点列表 -->
+        <div><a href='#p' onclick='c(this)'>接入点01</a><div role='img' aria-label='88%' title='88%' class='q q-4 l'></div></div>
+        <div><a href='#p' onclick='c(this)'>接入点02</a><div role='img' aria-label='88%' title='88%' class='q q-4'></div></div>
+        <div><a href='#p' onclick='c(this)'>接入点03</a><div role='img' aria-label='88%' title='88%' class='q q-3'></div></div>
+        <div><a href='#p' onclick='c(this)'>接入点04</a><div role='img' aria-label='88%' title='88%' class='q q-3'></div></div>
+        <div><a href='#p' onclick='c(this)'>接入点05</a><div role='img' aria-label='88%' title='88%' class='q q-3'></div></div>
+        <div><a href='#p' onclick='c(this)'>接入点06</a><div role='img' aria-label='88%' title='88%' class='q q-2'></div></div>
+        <div><a href='#p' onclick='c(this)'>接入点07</a><div role='img' aria-label='88%' title='88%' class='q q-2'></div></div>
+        <div><a href='#p' onclick='c(this)'>接入点08</a><div role='img' aria-label='88%' title='88%' class='q q-1'></div></div>
+        <div><a href='#p' onclick='c(this)'>接入点09</a><div role='img' aria-label='88%' title='88%' class='q q-1'></div></div>
+        <div><a href='#p' onclick='c(this)'>接入点10</a><div role='img' aria-label='88%' title='88%' class='q q-1'></div></div>
+        <div><a href='#p' onclick='c(this)'>接入点11</a><div role='img' aria-label='88%' title='88%' class='q q-0'></div></div>
+        <div><a href='#p' onclick='c(this)'>接入点12</a><div role='img' aria-label='88%' title='88%' class='q q-0'></div></div>
+        <div><a href='#p' onclick='c(this)'>接入点13</a><div role='img' aria-label='88%' title='88%' class='q q-0'></div></div>
+        <div><a href='#p' onclick='c(this)'>接入点14</a><div role='img' aria-label='88%' title='88%' class='q q-0 l'></div></div>
+        
+        <!-- 配置表单 -->
+        <form id="wmform" method='get' action='wifisave'>
+            <input id='s' name='s' length=32 placeholder='请输入WiFi名称'>
+            <br/>
+            <input id='p' name='p' length=64 type='password' placeholder='请输入WiFi密码'>
+            <br/><br/>
+            
+            <input id='server' name='server' length=4 placeholder='MQTT服务器地址'>
+            <br/>
+            <input id='port' name='port' length=5 placeholder='MQTT端口号' value='8080'>
+            <br/>
+            <input id='blynk' name='blynk' length=3 placeholder='Blynk令牌' value='YOUR_BLYNK_TOKEN'>
+            <br/><br/>
+            
+            <input id='ip' name='ip' length=15 placeholder='静态IP地址' value='10.0.1.56'>
+            <br/>
+            <input id='gw' name='gw' length=15 placeholder='静态网关地址' value='10.0.1.1'>
+            <br/>
+            <input id='sn' name='sn' length=15 placeholder='子网掩码' value='255.255.255.0'>
+            <br/><br/>
+            
+            <button type='submit'>保存配置</button>
+        </form>
+        
+        <br/>
+        <div class="c"><a href="/wifi">重新扫描网络</a></div>
+    </div>
+</body>
+</html>

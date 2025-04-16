@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>智能设备配置中心</title>
+    <!-- 引入Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+    :root {
+        --primary-color: #2196F3;
+        --background: #f5f5f5;
+        --card-bg: #ffffff;
+        --text-primary: #2d3748;
+    }
+
+    body {
+        font-family: 'Segoe UI', '微软雅黑', sans-serif;
+        background: var(--background);
+        margin: 0;
+        padding: 20px;
+        color: var(--text-primary);
+    }
+
+    .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background: var(--card-bg);
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+    }
+
+    .ap-list {
+        margin-bottom: 2rem;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 1.5rem;
+    }
+
+    .ap-item {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        margin: 8px 0;
+        background: #f8f9fa;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+
+    .ap-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .ap-item i {
+        color: var(--primary-color);
+        margin-right: 12px;
+    }
+
+    .config-form {
+        display: grid;
+        grid-gap: 1.5rem;
+    }
+
+    .input-group {
+        position: relative;
+    }
+
+    .input-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #4a5568;
+    }
+
+    input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+    }
+
+    input:focus {
+        border-color: var(--primary-color);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+    }
+
+    button {
+        background: var(--primary-color);
+        color: white;
+        padding: 14px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    button:hover {
+        background: #1976D2;
+        transform: translateY(-1px);
+    }
+
+    button i {
+        margin-right: 8px;
+    }
+
+    .scan-button {
+        background: #4CAF50;
+        margin-top: 1rem;
+    }
+
+    .section-title {
+        font-size: 20px;
+        color: var(--primary-color);
+        margin: 1.5rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--primary-color);
+        display: flex;
+        align-items: center;
+    }
+
+    .section-title i {
+        margin-right: 10px;
+    }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 网络列表 -->
+        <div class="ap-list">
+            <h2 class="section-title">
+                <i class="material-icons">wifi</i>
+                可用网络
+            </h2>
+            <div class="ap-item">
+                <i class="material-icons">signal_wifi_4_bar</i>
+                接入点01
+            </div>
+            <!-- 更多接入点... -->
+        </div>
+
+        <!-- 配置表单 -->
+        <form class="config-form" id="wmform" method='get' action='wifisave'>
+            <div class="input-group">
+                <label><i class="material-icons">wifi</i> WiFi名称</label>
+                <input type="text" id="s" name="s" placeholder="请输入您的WiFi名称">
+            </div>
+
+            <div class="input-group">
+                <label><i class="material-icons">lock</i> WiFi密码</label>
+                <input type="password" id="p" name="p" placeholder="请输入您的WiFi密码">
+            </div>
+
+            <h2 class="section-title">
+                <i class="material-icons">settings</i>
+                高级设置
+            </h2>
+
+            <div class="input-group">
+                <label><i class="material-icons">dns</i> MQTT服务器</label>
+                <input type="text" id="server" name="server" placeholder="mqtt.example.com">
+            </div>
+
+            <div class="input-group">
+                <label><i class="material-icons">lan</i> 网络设置</label>
+                <input type="text" id="ip" name="ip" placeholder="静态IP地址">
+                <input type="text" id="gw" name="gw" placeholder="网关地址">
+                <input type="text" id="sn" name="sn" placeholder="子网掩码">
+            </div>
+
+            <button type="submit">
+                <i class="material-icons">save</i>
+                保存配置
+            </button>
+        </form>
+
+        <button class="scan-button">
+            <i class="material-icons">refresh</i>
+            重新扫描网络
+        </button>
+    </div>
+</body>
+</html>

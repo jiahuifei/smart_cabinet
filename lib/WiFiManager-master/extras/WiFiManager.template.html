@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{v} - 智能设备配置</title>
+    <style>
+    :root {
+        --primary: #2196F3;
+        --success: #4CAF50;
+        --danger: #f44336;
+        --gap: 1.5rem;
+    }
+
+    body {
+        background: #f8f9fa;
+        font-family: "HarmonyOS Sans", "Microsoft YaHei", sans-serif;
+        line-height: 1.6;
+        padding: 20px;
+    }
+
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.05);
+        padding: 2.5rem;
+        display: grid;
+        gap: var(--gap);
+    }
+
+    .header {
+        text-align: center;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid #eee;
+    }
+
+    .button-group {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 1rem;
+        margin: 1.5rem 0;
+    }
+
+    .wifi-list {
+        display: grid;
+        gap: 1rem;
+        padding: 1.5rem;
+        background: #fafafa;
+        border-radius: 12px;
+    }
+
+    .wifi-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        transition: transform 0.2s;
+    }
+
+    .wifi-item:hover {
+        transform: translateY(-2px);
+    }
+
+    .form-group {
+        margin: 1.2rem 0;
+        display: grid;
+        gap: 0.8rem;
+    }
+
+    input, select {
+        padding: 12px 16px !important;
+        border: 2px solid #e0e0e0 !important;
+        border-radius: 10px !important;
+        font-size: 16px;
+    }
+
+    button {
+        padding: 14px 28px;
+        border-radius: 10px;
+        font-weight: 500;
+        font-size: 16px;
+    }
+
+    .status-card {
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1.5rem 0;
+    }
+
+    @media (max-width: 600px) {
+        .container {
+            padding: 1.5rem;
+            border-radius: 0;
+        }
+        body {
+            padding: 10px;
+        }
+    }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1 style="font-size: 2rem; margin: 0">📶 智能设备配置</h1>
+            <p style="color: #666; margin-top: 0.5rem">设备序列号：SN-2023-{i}</p>
+        </div>
+
+        <!-- 功能按钮组 -->
+        <div class="button-group">
+            <form action='/wifi' method='get'><button style="background: var(--primary))">🌐 网络配置</button></form>
+            <form action='/info' method='get'><button style="background: #666">📋 设备信息</button></form>
+            <form action='/restart' method='post'><button style="background: #9C27B0">🔄 重启设备</button></form>
+            <form action='/erase' method='post'><button style="background: var(--danger))">⚠️ 恢复出厂</button></form>
+        </div>
+
+        <!-- WiFi列表 -->
+        <div class="wifi-section">
+            <h2 style="margin-bottom: 1rem">📶 可用网络</h2>
+            <div class="wifi-list">
+                <div class="wifi-item">
+                    <span>🏠 家庭网络_5G</span>
+                    <div style="color: var(--primary))">信号强度：<strong>100%</strong></div>
+                </div>
+                <!-- 动态生成部分 -->
+                <!-- HTTP_ITEM -->
+                <div class="wifi-item">
+                    <a href="#p" onclick="fillSSID(this)">{v}</a>
+                    <div class="signal" style="color: {color}">{r}%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 配置表单 -->
+        <form method="post" action="wifisave" style="margin-top: 2rem">
+            <div class="form-group">
+                <label style="font-weight:500">📡 网络名称</label>
+                <input id="s" name="s" placeholder="请输入WiFi名称 (SSID)">
+            </div>
+
+            <div class="form-group">
+                <label style="font-weight:500">🔑 安全密钥</label>
+                <div style="position:relative">
+                    <input id="p" name="p" type="password" placeholder="输入WiFi密码">
+                    <button type="button" onclick="togglePassword()" 
+                            style="position:absolute; right:10px; top:50%; transform:translateY(-50%);
+                                    background: none; color: #666; padding: 4px">
+                        👁️ 显示
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" style="background: var(--primary); width:100%; margin-top:1.5rem">
+                💾 保存配置
+            </button>
+        </form>
+
+        <!-- 状态提示 -->
+        <div class="status-card" style="background: #e3f2fd; border-left: 4px solid var(--primary))">
+            <h3 style="margin:0">✅ 连接成功</h3>
+            <p style="margin:0.5rem 0">已连接至：<strong>{v}</strong></p>
+            <code style="color: #666">IP地址：{i}</code>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,206 @@
+<!-- HTTP_HEAD -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no"/>
+		<title>{v} - 智能设备配置</title>
+<!-- /HTTP_HEAD -->
+<!-- HTTP_STYLE -->
+<style>
+:root {
+	--primarycolor: #2196F3; /* 主色调改为科技蓝 */
+	--success: #4CAF50;     /* 成功状态绿色 */
+	--danger: #f44336;      /* 危险操作红色 */
+}
+
+body {
+	font-family: "Microsoft YaHei", "Helvetica Neue", sans-serif;
+	background: #f5f5f5;
+	color: #333;
+	margin: 0;
+	padding: 20px;
+}
+
+.wrap {
+	background: white;
+	padding: 2rem;
+	border-radius: 12px;
+	box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+	max-width: 600px;
+	margin: 20px auto;
+}
+
+h1, h2, h3, h4 {
+	color: var(--primarycolor);
+	margin: 1.2em 0 0.8em;
+}
+
+hr {
+	border: 0;
+	border-top: 1px solid #eee;
+	margin: 1.5rem 0;
+}
+
+button, input, select {
+	transition: all 0.3s ease;
+}
+
+button {
+	background: var(--primarycolor);
+	color: white !important;
+	padding: 12px 24px;
+	border-radius: 8px;
+	font-weight: 500;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+}
+
+button:hover {
+	opacity: 0.9;
+	transform: translateY(-1px);
+}
+
+button.D {
+	background: var(--danger);
+}
+
+input, select {
+	border: 2px solid #ddd !important;
+	padding: 10px 15px !important;
+	border-radius: 8px !important;
+}
+
+input:focus, select:focus {
+	border-color: var(--primarycolor) !important;
+	outline: none;
+}
+
+.msg {
+	padding: 1.2rem;
+	border-left: 4px solid;
+	background: #f8f9fa;
+	margin: 1rem 0;
+}
+
+.msg.P { border-color: var(--primarycolor); }
+.msg.S { border-color: var(--success); }
+.msg.D { border-color: var(--danger); }
+
+.signal-bar {
+	display: inline-block;
+	width: 60px;
+	height: 24px;
+	background: url('data:image/svg+xml;base64,PHN2Zy...') no-repeat; /* 自定义信号强度图标 */
+}
+
+.status-indicator {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	display: inline-block;
+	margin-right: 8px;
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+	.wrap {
+		padding: 1rem;
+		margin: 10px;
+	}
+	button {
+		width: 100%;
+	}
+}
+</style>
+<!-- /HTTP_STYLE -->
+<!-- HTTP_SCRIPT -->
+<script>
+function fillSSID(ssidElement) {
+	document.getElementById('s').value = ssidElement.innerText;
+	const hasPassword = ssidElement.nextElementSibling.classList.contains('has-pwd');
+	document.getElementById('p').disabled = !hasPassword;
+	if(hasPassword) document.getElementById('p').focus();
+}
+
+function togglePassword() {
+	const pwdField = document.getElementById('p');
+	pwdField.type = pwdField.type === 'password' ? 'text' : 'password';
+}
+</script>
+<!-- /HTTP_SCRIPT -->
+<!-- HTTP_HEAD_END -->
+	</head>
+	<body>
+		<div class="wrap">
+			<!-- 主菜单 -->
+			<h2>🛠️ 设备配置中心</h2>
+			<div class="button-group">
+				<form action='/wifi' method='get'><button>📶 配置WiFi网络</button></form>
+				<form action='/info' method='get'><button>ℹ️ 设备信息</button></form>
+				<form action='/restart' method='post'><button>🔄 重启设备</button></form>
+				<form action='/erase' method='post'><button class="D">⚠️ 清除配置</button></form>
+			</div>
+
+			<!-- WiFi列表 -->
+			<h3>📡 可用WiFi网络</h3>
+			<div class="wifi-list">
+				<div><a href="#p" onclick="fillSSID(this)">家庭WiFi_5G</a><span class="signal">📶 强</span></div>
+				<div><a href="#p" onclick="fillSSID(this)">办公室网络</a><span class="signal">📶 中</span></div>
+				<!-- 动态生成部分保留占位符 -->
+				<!-- HTTP_ITEM -->
+				<div><a href="#p" onclick="fillSSID(this)">{v}</a><div class="signal-bar q-{q}">{r}%</div></div>
+			</div>
+
+			<!-- 配置表单 -->
+			<form method="post" action="wifisave">
+				<div class="form-group">
+					<label for="s">🔑 网络名称 (SSID)</label>
+					<input id="s" name="s" placeholder="请输入WiFi名称">
+				</div>
+				
+				<div class="form-group">
+					<label for="p">🔒 密码</label>
+					<div class="password-field">
+						<input id="p" name="p" type="password" placeholder="输入密码">
+						<label class="show-pwd">
+							<input type="checkbox" onclick="togglePassword()"> 显示密码
+						</label>
+					</div>
+				</div>
+
+				<!-- 高级设置 -->
+				<details class="advanced-settings">
+					<summary>⚙️ 高级设置</summary>
+					<div class="form-group">
+						<label>📡 网络模式</label>
+						<select name="network_mode">
+							<option value="auto">自动选择</option>
+							<option value="11n">802.11n</option>
+							<option value="11ac">802.11ac</option>
+						</select>
+					</div>
+				</details>
+
+				<button type="submit" class="submit-btn">💾 保存并连接</button>
+			</form>
+
+			<!-- 状态提示 -->
+			<!-- HTTP_STATUS_ON -->
+			<div class="msg P">
+				<h4>✅ 连接成功</h4>
+				<p>已连接到 {v}<br>
+				<small>IP地址：{i}</small></p>
+			</div>
+
+			<!-- HTTP_STATUS_OFF -->
+			<div class="msg D">
+				<h4>❌ 连接失败</h4>
+				<p>无法连接到 {v}<br>
+				<small>错误原因：{r}</small></p>
+			</div>
+		</div>
+	</body>
+</html>
