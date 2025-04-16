@@ -58,7 +58,7 @@ void loop()
     ui_tick();
     lvgl_port_unlock();
   }
-  mqttloop();        // 可能涉及UI操作
+  mqttloop();
   super_loop();      // 可能涉及UI操作
 
 }

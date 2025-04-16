@@ -125,10 +125,6 @@ static void handle_selection_confirmation() {
   lv_tabview_set_act(objects.tabview, 3, LV_ANIM_ON);
 }
 
-
-
-
-
 // 主循环处理函数
 void super_loop()
 {

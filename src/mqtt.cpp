@@ -124,7 +124,7 @@ void send_heartbeat() {
   JsonDocument doc;
   doc["timestamp"] = millis();
   
-  // 使用新的推荐语法
+  // 使用新语法
   auto network = doc["network"].to<JsonObject>();
   network["rssi"] = WiFi.RSSI();
   network["ip"] = WiFi.localIP().toString();
