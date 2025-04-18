@@ -10,6 +10,9 @@ void progress_bar_select();
 void update_select_page(const char *borrowing_status_things[4]);
 void timeout_callback_1(lv_timer_t *timer);
 static void check_progress_complete(int32_t value);
+void create_progress_msgbox(const char *title, const char *message);
+void update_progress(int value);
+void close_progress_msgbox();
 
 struct MessageBoxInfo {
     lv_obj_t* msgbox;

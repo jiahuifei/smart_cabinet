@@ -894,7 +894,7 @@ void create_screen_manage() {
             lv_obj_t *obj = lv_btn_create(parent_obj);
             objects.manage_btn_1 = obj;
             lv_obj_set_pos(obj, 13, 44);
-            lv_obj_set_size(obj, 100, 25);
+            lv_obj_set_size(obj, 57, 52);
             {
                 lv_obj_t *parent_obj = obj;
                 {
@@ -910,8 +910,8 @@ void create_screen_manage() {
             // manage_btn_2
             lv_obj_t *obj = lv_btn_create(parent_obj);
             objects.manage_btn_2 = obj;
-            lv_obj_set_pos(obj, 13, 77);
-            lv_obj_set_size(obj, 100, 25);
+            lv_obj_set_pos(obj, 13, 110);
+            lv_obj_set_size(obj, 55, 62);
             {
                 lv_obj_t *parent_obj = obj;
                 {
@@ -927,8 +927,8 @@ void create_screen_manage() {
             // manage_btn_3
             lv_obj_t *obj = lv_btn_create(parent_obj);
             objects.manage_btn_3 = obj;
-            lv_obj_set_pos(obj, 13, 111);
-            lv_obj_set_size(obj, 100, 25);
+            lv_obj_set_pos(obj, 13, 179);
+            lv_obj_set_size(obj, 57, 59);
             {
                 lv_obj_t *parent_obj = obj;
                 {
@@ -944,8 +944,8 @@ void create_screen_manage() {
             // manage_btn_4
             lv_obj_t *obj = lv_btn_create(parent_obj);
             objects.manage_btn_4 = obj;
-            lv_obj_set_pos(obj, 13, 146);
-            lv_obj_set_size(obj, 100, 25);
+            lv_obj_set_pos(obj, 13, 248);
+            lv_obj_set_size(obj, 57, 59);
             {
                 lv_obj_t *parent_obj = obj;
                 {
@@ -961,8 +961,8 @@ void create_screen_manage() {
             // manage_btn_5
             lv_obj_t *obj = lv_btn_create(parent_obj);
             objects.manage_btn_5 = obj;
-            lv_obj_set_pos(obj, 13, 180);
-            lv_obj_set_size(obj, 100, 25);
+            lv_obj_set_pos(obj, 13, 315);
+            lv_obj_set_size(obj, 57, 60);
             {
                 lv_obj_t *parent_obj = obj;
                 {
@@ -978,8 +978,8 @@ void create_screen_manage() {
             // manage_btn_6
             lv_obj_t *obj = lv_btn_create(parent_obj);
             objects.manage_btn_6 = obj;
-            lv_obj_set_pos(obj, 13, 213);
-            lv_obj_set_size(obj, 100, 25);
+            lv_obj_set_pos(obj, 13, 384);
+            lv_obj_set_size(obj, 57, 61);
             {
                 lv_obj_t *parent_obj = obj;
                 {
@@ -995,8 +995,8 @@ void create_screen_manage() {
             // manage_btn_7
             lv_obj_t *obj = lv_btn_create(parent_obj);
             objects.manage_btn_7 = obj;
-            lv_obj_set_pos(obj, 13, 249);
-            lv_obj_set_size(obj, 100, 25);
+            lv_obj_set_pos(obj, 85, 44);
+            lv_obj_set_size(obj, 57, 52);
             {
                 lv_obj_t *parent_obj = obj;
                 {
@@ -1012,8 +1012,8 @@ void create_screen_manage() {
             // manage_btn_8
             lv_obj_t *obj = lv_btn_create(parent_obj);
             objects.manage_btn_8 = obj;
-            lv_obj_set_pos(obj, 13, 282);
-            lv_obj_set_size(obj, 100, 25);
+            lv_obj_set_pos(obj, 85, 110);
+            lv_obj_set_size(obj, 55, 62);
             {
                 lv_obj_t *parent_obj = obj;
                 {
@@ -1029,8 +1029,8 @@ void create_screen_manage() {
             // manage_btn_9
             lv_obj_t *obj = lv_btn_create(parent_obj);
             objects.manage_btn_9 = obj;
-            lv_obj_set_pos(obj, 13, 316);
-            lv_obj_set_size(obj, 100, 25);
+            lv_obj_set_pos(obj, 85, 179);
+            lv_obj_set_size(obj, 57, 59);
             {
                 lv_obj_t *parent_obj = obj;
                 {
@@ -1046,8 +1046,8 @@ void create_screen_manage() {
             // manage_btn_10
             lv_obj_t *obj = lv_btn_create(parent_obj);
             objects.manage_btn_10 = obj;
-            lv_obj_set_pos(obj, 13, 351);
-            lv_obj_set_size(obj, 100, 25);
+            lv_obj_set_pos(obj, 85, 248);
+            lv_obj_set_size(obj, 57, 59);
             {
                 lv_obj_t *parent_obj = obj;
                 {
@@ -1063,8 +1063,8 @@ void create_screen_manage() {
             // manage_btn_11
             lv_obj_t *obj = lv_btn_create(parent_obj);
             objects.manage_btn_11 = obj;
-            lv_obj_set_pos(obj, 13, 385);
-            lv_obj_set_size(obj, 100, 25);
+            lv_obj_set_pos(obj, 85, 316);
+            lv_obj_set_size(obj, 57, 59);
             {
                 lv_obj_t *parent_obj = obj;
                 {
@@ -1080,8 +1080,8 @@ void create_screen_manage() {
             // manage_btn_12
             lv_obj_t *obj = lv_btn_create(parent_obj);
             objects.manage_btn_12 = obj;
-            lv_obj_set_pos(obj, 13, 418);
-            lv_obj_set_size(obj, 100, 25);
+            lv_obj_set_pos(obj, 85, 384);
+            lv_obj_set_size(obj, 57, 61);
             {
                 lv_obj_t *parent_obj = obj;
                 {
@@ -1106,7 +1106,8 @@ void create_screen_manage() {
                     lv_obj_set_pos(obj, 0, 0);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
-                    lv_label_set_text(obj, "ALL");
+                    lv_obj_set_style_text_font(obj, &ui_font_111, LV_PART_MAIN | LV_STATE_DEFAULT);
+                    lv_label_set_text(obj, "打开\n所有");
                 }
             }
         }
@@ -1123,7 +1124,8 @@ void create_screen_manage() {
                     lv_obj_set_pos(obj, 0, 0);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
-                    lv_label_set_text(obj, "HOME");
+                    lv_obj_set_style_text_font(obj, &ui_font_111, LV_PART_MAIN | LV_STATE_DEFAULT);
+                    lv_label_set_text(obj, "主页");
                 }
             }
         }
