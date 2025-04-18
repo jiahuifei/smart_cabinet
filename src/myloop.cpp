@@ -78,6 +78,7 @@ static void handle_item_buttons() {
           Serial.printf("[Action] Item %d status changed to %s\n", i, itemStatusList[i]);
       }
   }
+  
 }
 
 // 处理选择页确认按钮点击
@@ -199,7 +200,11 @@ void super_loop()
     delay(1000);
     update_progress(20);
     delay(1000);
+    update_progress(100);
     close_progress_msgbox();
+    delay(1000);
+    //跳转到完成页
+    lv_tabview_set_act(objects.tabview, 3, LV_ANIM_ON); // 切换到完成页
     break;
     
   case 3: // 完成页（Tab 3）
@@ -292,7 +297,7 @@ void create_progress_msgbox(const char *title, const char *message)
     }
 
     // 创建消息框
-    static const char *btns[] = {"Cancel", "", ""};
+    static const char *btns[] = {"", "", ""};
     progress_msgbox = lv_msgbox_create(lv_scr_act(), title, message, btns, false);
     
     // 设置消息框样式
