@@ -1,7 +1,7 @@
 {
   "navigation": {
-    "selectedUserPageObject": "[test.eez-project]:/userPages/0",
-    "selectedFontObject": "[test.eez-project]:/fonts/2",
+    "selectedUserPageObject": "[test.eez-project]:/userPages/1",
+    "selectedFontObject": "[test.eez-project]:/fonts/0",
     "selectedBitmapObject": "[test.eez-project]:/bitmaps/0",
     "subnavigationSelectedItems": {
       "variables-tab/sub-navigation/selected-item": "Widgets"
@@ -201,10 +201,43 @@
               "type": "tabset",
               "id": "EDITORS",
               "weight": 57.19520319786809,
-              "selected": 1,
+              "selected": 4,
               "enableDeleteWhenEmpty": false,
               "enableClose": false,
               "children": [
+                {
+                  "type": "tab",
+                  "id": "#061f5e04-a260-4507-92e4-66e6265a9481",
+                  "name": "111",
+                  "component": "editor",
+                  "config": {
+                    "objectPath": "[test.eez-project]:/fonts/0",
+                    "permanent": true
+                  },
+                  "icon": "material:font_download"
+                },
+                {
+                  "type": "tab",
+                  "id": "#0f7f12b4-9109-4222-85e5-a502b261cbef",
+                  "name": "222",
+                  "component": "editor",
+                  "config": {
+                    "objectPath": "[test.eez-project]:/fonts/1",
+                    "permanent": true
+                  },
+                  "icon": "material:font_download"
+                },
+                {
+                  "type": "tab",
+                  "id": "#9684a377-6fe7-431f-ae78-cd13153c5d43",
+                  "name": "30",
+                  "component": "editor",
+                  "config": {
+                    "objectPath": "[test.eez-project]:/fonts/2",
+                    "permanent": true
+                  },
+                  "icon": "material:font_download"
+                },
                 {
                   "type": "tab",
                   "id": "#fb8dffb8-cb25-4ee8-a7ac-290cc52c9fc0",
@@ -220,10 +253,10 @@
                 {
                   "type": "tab",
                   "id": "#4cf4eb58-a970-4131-a6ff-5819fd79df55",
-                  "name": "Main",
+                  "name": "manage",
                   "component": "editor",
                   "config": {
-                    "objectPath": "[test.eez-project]:/userPages/0",
+                    "objectPath": "[test.eez-project]:/userPages/1",
                     "permanent": false
                   },
                   "icon": "svg:page"
@@ -1087,10 +1120,10 @@
       },
       "transform": {
         "translate": {
-          "x": -299.635598253848,
-          "y": -195.5275297022577
+          "x": -474.0078146313862,
+          "y": -190.5389868174907
         },
-        "scale": 0.75
+        "scale": 1.1
       },
       "timeline": {
         "isEditorActive": false,
@@ -1119,6 +1152,6 @@
   ],
   "showInactiveFlowsInDebugger": true,
   "globalFlowZoom": true,
-  "flowZoom": 0.75,
+  "flowZoom": 1.1,
   "implementationLanguage": "C"
 }

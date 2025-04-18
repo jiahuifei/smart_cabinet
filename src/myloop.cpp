@@ -24,6 +24,11 @@ static lv_timer_t *operationTimeoutTimer = NULL;  // 操作超时计时器
 #define TIMEOUT_MS_OVERALL 3000000      // 单步操作超时时间(5分钟)
 #define TOTAL_PROCESS_TIMEOUT_MS 30000000    // 整体流程超时时间(50分钟)
 
+/* 进度条弹窗相关变量 */
+static lv_obj_t *progress_msgbox = NULL;
+static lv_obj_t *progress_slider = NULL;
+static lv_obj_t *progress_label = NULL;
+
 /**
  * 处理主页按钮点击事件
  * @param operationName 操作名称(用于日志)
@@ -189,6 +194,12 @@ void super_loop()
     if (lv_obj_has_state(objects.home_select_ok, LV_STATE_PRESSED)) {
         handle_selection_confirmation();
     }
+    create_progress_msgbox("test", "test");
+    update_progress(10);
+    delay(1000);
+    update_progress(20);
+    delay(1000);
+    close_progress_msgbox();
     break;
     
   case 3: // 完成页（Tab 3）
@@ -266,4 +277,66 @@ void timeout_callback_1(lv_timer_t * timer)
   } else {
     Serial.println("[Error] Failed to acquire LVGL lock in timeout handler");
   }
+}
+/******************************************************************************************/
+/**
+ * @brief 创建进度条弹窗
+ * @param title 弹窗标题
+ * @param message 弹窗消息
+ */
+void create_progress_msgbox(const char *title, const char *message)
+{
+    // 如果已存在则先删除
+    if(progress_msgbox) {
+        lv_obj_del(progress_msgbox);
+    }
+
+    // 创建消息框
+    static const char *btns[] = {"Cancel", "", ""};
+    progress_msgbox = lv_msgbox_create(lv_scr_act(), title, message, btns, false);
+    
+    // 设置消息框样式
+    lv_obj_set_size(progress_msgbox, 300, 200);
+    lv_obj_center(progress_msgbox);
+    lv_obj_set_style_border_width(progress_msgbox, 0, 0);
+    lv_obj_set_style_shadow_width(progress_msgbox, 20, 0);
+    lv_obj_set_style_shadow_color(progress_msgbox, lv_color_hex(0xa9a9a9), LV_STATE_DEFAULT);
+    
+    // 创建进度条滑块
+    progress_slider = lv_slider_create(progress_msgbox);
+    lv_obj_set_size(progress_slider, 250, 20);
+    lv_obj_align(progress_slider, LV_ALIGN_CENTER, 0, 20);
+    lv_slider_set_range(progress_slider, 0, 100);
+    lv_slider_set_value(progress_slider, 0, LV_ANIM_OFF);
+    
+    // 创建进度百分比标签
+    progress_label = lv_label_create(progress_msgbox);
+    lv_label_set_text(progress_label, "0%");
+    lv_obj_align_to(progress_label, progress_slider, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
+    lv_obj_set_style_text_font(progress_label, &lv_font_montserrat_20, LV_STATE_DEFAULT);
+}
+
+/**
+ * @brief 更新进度条
+ * @param value 进度值(0-100)
+ */
+void update_progress(int value)
+{
+    if(!progress_msgbox || !progress_slider || !progress_label) return;
+    
+    lv_slider_set_value(progress_slider, value, LV_ANIM_ON);
+    lv_label_set_text_fmt(progress_label, "%d%%", value);
+}
+
+/**
+ * @brief 关闭进度条弹窗
+ */
+void close_progress_msgbox()
+{
+    if(progress_msgbox) {
+        lv_obj_del(progress_msgbox);
+        progress_msgbox = NULL;
+        progress_slider = NULL;
+        progress_label = NULL;
+    }
 }
