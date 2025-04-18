@@ -6,9 +6,9 @@ WiFiClient espClient;
 // MQTT客户端实例，使用WiFi客户端
 PubSubClient client(espClient);
 
-// WiFi连接配置
-const char *ssid = "306";           // WiFi名称
-const char *password = "123456789"; // WiFi密码
+// // WiFi连接配置
+// const char *ssid = "306";           // WiFi名称
+// const char *password = "123456789"; // WiFi密码
 
 // MQTT服务器配置
 const char *mqtt_broker = "39.98.181.107"; // MQTT服务器地址
@@ -337,7 +337,7 @@ void mqtt_initialize() {
 
     // 重置设置 - 擦除存储的凭证用于测试
     // 这些凭证由ESP库存储
-    // wm.resetSettings();
+    //wm.resetSettings();
 
     // 自动使用保存的凭证连接
     // 如果连接失败，将启动指定名称的接入点("AutoConnectAP")
