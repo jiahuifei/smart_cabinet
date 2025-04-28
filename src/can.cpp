@@ -2,7 +2,7 @@
 * 使用前需要控制CH422G的IO5输出低电平，
 * 否则CAN将无法使用
 */
-#include "twai.h"  // 包含TWAI(CAN)驱动头文件
+
 #include "main.h"
 
 static bool driver_installed = false;
@@ -45,25 +45,25 @@ bool can_write_message(const twai_message_t* msg_to_send) {
     return (twai_transmit(msg_to_send, pdMS_TO_TICKS(10)) == ESP_OK);
 }
 
-// 示例用法
-void can_setup() {
-    if (can_init_bus()) {
-        // 初始化测试消息
-        message.identifier = 0x6f;
-        message.data_length_code = 8;
-        for (int i = 0; i < 8; i++) {
-            message.data[i] = i;
-        }
-    }
-}
+// // 示例用法
+// void can_setup() {
+//     if (can_init_bus()) {
+//         // 初始化测试消息
+//         message.identifier = 0x6f;
+//         message.data_length_code = 8;
+//         for (int i = 0; i < 8; i++) {
+//             message.data[i] = i;
+//         }
+//     }
+// }
 
-void can_loop() {
-    twai_message_t rx_msg;
-    if (can_read_message(&rx_msg)) {
-        // 处理接收到的消息
-        // ...
+// void can_loop() {
+//     twai_message_t rx_msg;
+//     if (can_read_message(&rx_msg)) {
+//         // 处理接收到的消息
+//         // ...
         
-        // 回环测试
-        can_write_message(&rx_msg);
-    }
-}
+//         // 回环测试
+//         can_write_message(&rx_msg);
+//     }
+// }

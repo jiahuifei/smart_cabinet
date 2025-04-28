@@ -206,3 +206,34 @@ bool directOpenLockById(int lockId) {
     return openLock(boardNo, lockNo, rsMsg);
 }
 
+// 7. 通过锁ID直接检查锁状态
+// 参数：lockId - 锁ID(0-48)
+//       rsMsg[OUT] - 返回状态消息（VALID/INVALID）
+// 返回：true-获取成功 / false-获取失败
+bool directGetStateById(int lockId) {
+    char rsMsg[32]; // 内部处理结果缓冲区
+    uint8_t boardNo = 0;
+    uint8_t lockNo = 0;
+    
+    // 根据锁ID映射板地址和锁地址
+    if (lockId >= 1 && lockId <= 24) {
+        // 0x02板的1-24号锁
+        boardNo = 0x02;
+        lockNo = lockId;
+    } else if (lockId >= 25 && lockId <= 36) {
+        // 0x03板的1-12号锁
+        boardNo = 0x03;
+        lockNo = lockId - 24;
+    } else if (lockId >= 37 && lockId <= 48) {
+        // 0x01板的1-12号锁
+        boardNo = 0x01;
+        lockNo = lockId - 36;
+    } else if (lockId == 0) {
+        // 特殊ID 0 - 全板状态查询
+        return getAllState(0x01, rsMsg); // 只查询一个板的状态作为代表
+    } else {
+        return false;
+    }
+    
+    return getState(boardNo, lockNo, rsMsg);
+}

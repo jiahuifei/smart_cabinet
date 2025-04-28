@@ -51,6 +51,12 @@ static void handleHomePageButton(const char* operationName, const char* operatio
 void processIdentityVerification()
 {
   const char *userInputId = lv_textarea_get_text(objects.home_idcheck_textarea);
+  
+  // 验证是否为6位数字
+  if(strlen(userInputId) != 6) {
+    lv_msgbox_create(lv_scr_act(), "error", "Please enter the 6-digit code", NULL, true);
+    return;
+  }
   Serial.printf("[Action] 用户ID: %s, 操作类型: %s\n", userInputId, currentOperationType);
   
   // 发送验证请求到服务器
@@ -65,6 +71,7 @@ void processIdentityVerification()
     currentWorkflowStage = 2; // 进入物品选择阶段
     item_states_received = false;
   }
+  //还需要完善验证失败的情况
 }
 
 // 处理选择页物品按钮点击状态
@@ -99,20 +106,102 @@ static void handle_selection_confirmation() {
   
   Serial.println("[Action] Selection confirmed, proceeding to completion page");
   
+  // 创建进度条
+  create_progress_msgbox("领用中", "正在处理领用请求...");
+  update_progress(33); // 1/3进度
+  
   // 开启柜门
   for (int i = 0; i < 4; i++) {
-      if (strcmp(itemStatusList[i], STATUS_RETURN) == 0) {
-          char rsMsg[32];
-          bool result = openLock(1, i + 1, rsMsg);
-          if (result) {
-              Serial.printf("[Action] Door %d opened successfully\n", i + 1);
-          } else {
-              Serial.printf("[Error] Failed to open door %d: %s\n", i + 1, rsMsg);
-          }
+    if (strcmp(itemStatusList[i], STATUS_RETURN) == 0) {
+      char rsMsg[32];
+      bool result = openLock(1, i + 1, rsMsg);
+      if (result) {
+          Serial.printf("[Action] Door %d opened successfully\n", i + 1);
+      } else {
+          Serial.printf("[Error] Failed to open door %d: %s\n", i + 1, rsMsg);
       }
+    }
+  }
+
+  // 等待用户关门
+  bool allDoorsClosed = true;
+  unsigned long startTime = millis();
+  const unsigned long timeout = 30000; // 30秒超时
+  
+  while(millis() - startTime < timeout) {
+    allDoorsClosed = true;
+    
+    // 检查所有需要关闭的门
+    for (int i = 0; i < 4; i++) {
+      if (strcmp(itemStatusList[i], STATUS_RETURN) == 0) {
+        if(directGetStateById(i + 1)) {
+            // 门未关闭
+            allDoorsClosed = false;
+            break;
+
+        } else {
+          allDoorsClosed = false;
+          break;
+        }
+      }
+    }
+    
+    if(allDoorsClosed) {
+      break; // 所有门已关闭
+    }
+    
+    delay(500); // 每500ms检查一次
+  }
+
+  if(!allDoorsClosed) {
+    lv_msgbox_create(lv_scr_act(), "警告", "请关闭所有柜门", NULL, true);
+    return;
   }
   
-  // 发送操作结果
+  update_progress(66); // 2/3进度
+  // 开始RFID验证
+  //rfid_start_inventory();
+  //bool rfidMatch = verifyRfidTags(itemStatusList);
+  //改变RFID验证结果
+  bool rfidMatch = true;
+
+  if(!rfidMatch) {
+    // 创建弹窗提示不匹配
+    static const char *btns[] = {"重新领取", "忽略", ""};
+    lv_obj_t *msgbox = lv_msgbox_create(lv_scr_act(), "警告", "领用物品不匹配，请检查!", btns, true);
+    lv_obj_add_event_cb(msgbox, [](lv_event_t *e) {
+      if(lv_msgbox_get_active_btn(e->target) == 0) {
+        // 重新领取
+        handle_selection_confirmation();
+      } else {
+        // 忽略并发送错误
+        //send_error_to_server("RFID_MISMATCH");
+        // 发送RFID验证错误信息
+        JsonDocument doc;
+        doc["operation_type"] = currentOperationType;
+        doc["status"] = "error";
+        doc["error_code"] = "RFID_MISMATCH";
+        doc["error_message"] = "RFID标签与预期物品不匹配";
+        
+        JsonArray items = doc.createNestedArray("items");
+        for (int i = 0; i < 4; i++) {
+            JsonObject item = items.createNestedObject();
+            item["id"] = i + 1;
+            item["status"] = itemStatusList[i];
+        }
+        
+        char buffer_err[256];
+        serializeJson(doc, buffer_err);
+        mqtt_publish(buffer_err);
+      }
+    }, LV_EVENT_VALUE_CHANGED, NULL);
+    return;
+  }
+  
+  update_progress(100); // 完成
+  close_progress_msgbox();
+  
+  // 发送完成信息
   JsonDocument doc;
   doc["operation_type"] = currentOperationType;
   JsonArray items = doc.createNestedArray("items");

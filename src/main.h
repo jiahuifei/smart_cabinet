@@ -25,6 +25,8 @@
 #include "myloop.h"
 #include "js.h"
 #include "openlock.h"
+#include "rfid.h"
+#include "can.h"
 
 /*
  若要使用LVGL内置示例和演示，请取消下方对应的include注释
