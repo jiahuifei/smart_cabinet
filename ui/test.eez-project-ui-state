@@ -1,6 +1,6 @@
 {
   "navigation": {
-    "selectedUserPageObject": "[test.eez-project]:/userPages/1",
+    "selectedUserPageObject": "[test.eez-project]:/userPages/0",
     "selectedFontObject": "[test.eez-project]:/fonts/0",
     "selectedBitmapObject": "[test.eez-project]:/bitmaps/0",
     "subnavigationSelectedItems": {
@@ -177,7 +177,8 @@
                       "enableClose": false,
                       "icon": "svg:hierarchy"
                     }
-                  ]
+                  ],
+                  "active": true
                 },
                 {
                   "type": "tabset",
@@ -253,16 +254,15 @@
                 {
                   "type": "tab",
                   "id": "#4cf4eb58-a970-4131-a6ff-5819fd79df55",
-                  "name": "manage",
+                  "name": "Main",
                   "component": "editor",
                   "config": {
-                    "objectPath": "[test.eez-project]:/userPages/1",
+                    "objectPath": "[test.eez-project]:/userPages/0",
                     "permanent": false
                   },
                   "icon": "svg:page"
                 }
-              ],
-              "active": true
+              ]
             },
             {
               "type": "row",
@@ -1032,29 +1032,18 @@
       "selection": {
         "0": {
           "0": {
-            "0": {
-              "0": {},
-              "1": {},
-              "2": {}
-            },
-            "1": {
-              "0": {}
-            },
-            "2": {
-              "0": {},
-              "3": {},
-              "5": {}
-            },
-            "3": {}
+            "3": {
+              "$selected": true
+            }
           }
         }
       },
       "transform": {
         "translate": {
-          "x": -306.2742215154916,
-          "y": -209.25678287793374
+          "x": -370.83573643065574,
+          "y": -200.94301907834992
         },
-        "scale": 0.75
+        "scale": 0.8
       },
       "timeline": {
         "isEditorActive": false,
@@ -1139,6 +1128,7 @@
   "searchMatchWholeWord": false,
   "replaceEnabled": false,
   "replaceText": "",
+  "pageEditorFrontFace": true,
   "pageRuntimeFrontFace": true,
   "breakpoints": {},
   "watchExpressions": [],
@@ -1152,6 +1142,6 @@
   ],
   "showInactiveFlowsInDebugger": true,
   "globalFlowZoom": true,
-  "flowZoom": 1.1,
+  "flowZoom": 0.8,
   "implementationLanguage": "C"
 }

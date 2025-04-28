@@ -1,153 +1,161 @@
-#include <stdint.h>
-#include <string.h>
-#include <stdio.h>
+#include <driver/twai.h>
+#include <esp_log.h>
 
-#define MAX_ANTENNA 32
-#define BUFFER_SIZE 512
-#define DEFAULT_485_ADDR 0x0100
+#define RFID_CAN_ID 0x0100
+#define CMD_INVENTORY_EPC 0x20
+#define CMD_STOP_INVENTORY 0x2F
+#define CMD_RESET 0x40
 
-typedef enum {
-    RFID_OK,
-    RFID_ERR_CHECKSUM,
-    RFID_ERR_TIMEOUT,
-    RFID_ERR_INVALID_RESP,
-    RFID_ERR_HARDWARE
-} RFIDStatus;
+static const char* TAG = "RFID";
 
+// RFID指令结构体
 typedef struct {
-    uint8_t freq;
-    uint8_t ant_id;
-    uint16_t pc;
-    uint8_t epc[64];
-    int16_t rssi;
-} EPCRecord;
+    uint8_t head;      // 固定头 0xD9
+    uint8_t len;       // 数据长度
+    uint16_t address;  // 485地址
+    uint8_t cmd;       // 指令码
+    uint8_t ck;        // 校验和
+} __attribute__((packed)) RfidCommand;
 
+// RFID响应结构体
 typedef struct {
-    int com_port;
-    uint16_t addr;
-    uint8_t ant_count;
-    uint8_t current_ant;
-    uint8_t tx_power[MAX_ANTENNA];
-} RFIDReader;
+    uint8_t head;       // 固定头 0xD9
+    uint8_t len;       // 数据长度
+    uint16_t reserved; // 保留字段
+    uint8_t cmd;       // 指令码
+    uint8_t flags;     // 状态标志
+    uint8_t data[];    // 可变长度数据
+} __attribute__((packed)) RfidResponse;
 
-// 校验和计算
-uint8_t calculate_checksum(uint8_t *data, uint8_t len) {
-    uint8_t sum = 0;
-    for(int i=0; i<len; i++) sum += data[i];
-    return (~sum) + 1;
-}
+// 初始化RFID读写器
+bool rfid_init() {
+    // 发送复位指令
+    RfidCommand reset_cmd = {
+        .head = 0xD9,
+        .len = 0x04,
+        .address = RFID_CAN_ID,
+        .cmd = CMD_RESET,
+        .ck = 0xE2
+    };
 
-// 构建基础指令帧
-void build_command_frame(uint8_t cmd, uint16_t addr, uint8_t *data, 
-                        uint8_t data_len, uint8_t *out, uint8_t *out_len) {
-    out[0] = 0xD9;  // Head
-    out[1] = 3 + data_len;  // Len
-    out[2] = addr & 0xFF;   // 485地址低字节
-    out[3] = addr >> 8;     // 485地址高字节  
-    out[4] = cmd;
-    
-    if(data_len > 0) {
-        memcpy(&out[5], data, data_len);
+    if (!can_write_message((twai_message_t*)&reset_cmd, sizeof(reset_cmd))) {
+        ESP_LOGE(TAG, "Failed to send reset command");
+        return false;
     }
-    
-    // 计算校验和
-    uint8_t cksum = calculate_checksum(&out[1], 4 + data_len);
-    out[5 + data_len] = cksum;
-    
-    *out_len = 6 + data_len;
-}
 
-// 设置天线参数
-RFIDStatus set_antenna_config(RFIDReader *reader, uint8_t ant_mask[]) {
-    uint8_t cmd_data[32] = {0};
-    
-    // 天线选择（4字节）
-    memcpy(cmd_data, ant_mask, 4);  
-    
-    // 功率设置（每个天线1字节）
-    for(int i=0; i<reader->ant_count; i++){
-        cmd_data[4+i] = reader->tx_power[i];
+    // 等待复位响应
+    twai_message_t response;
+    if (!can_read_message(&response, pdMS_TO_TICKS(1000))) {
+        ESP_LOGE(TAG, "No response to reset command");
+        return false;
     }
-    
-    // 构建完整指令
-    uint8_t packet[BUFFER_SIZE];
-    uint8_t pkt_len;
-    build_command_frame(0x62, reader->addr, cmd_data, 4 + reader->ant_count, 
-                       packet, &pkt_len);
-    
-    // 发送指令并验证响应...
-    return RFID_OK;
-}
 
-// 单天线盘存
-RFIDStatus single_antenna_inventory(RFIDReader *reader, uint8_t ant_id, 
-                                   EPCRecord *records, int *record_count) {
-    // 设置单天线模式
-    uint8_t ant_mask[4] = {0};
-    if(ant_id < reader->ant_count) {
-        ant_mask[3 - (ant_id/8)] |= 1 << (ant_id%8); // Big-endian格式
+    RfidResponse* resp = (RfidResponse*)response.data;
+    if (resp->cmd != CMD_RESET || resp->len != 0x06) {
+        ESP_LOGE(TAG, "Invalid reset response");
+        return false;
     }
-    
-    set_antenna_config(reader, ant_mask);
-    
-    // 发送盘存指令
-    uint8_t packet[BUFFER_SIZE];
-    uint8_t pkt_len;
-    build_command_frame(0x20, reader->addr, NULL, 0, packet, &pkt_len);
-    
-    // 发送数据...
-    // 接收并解析响应...
-    
-    return RFID_OK;
+
+    ESP_LOGI(TAG, "RFID reader initialized successfully");
+    return true;
 }
 
-// 全部门扫描
-RFIDStatus full_cycle_scan(RFIDReader *reader, 
-                          void (*callback)(uint8_t ant_id, EPCRecord *record)) {
-    for(uint8_t ant=0; ant<reader->ant_count; ant++) {
-        EPCRecord records[10];
-        int count = 10;
+// 开始盘存标签
+bool rfid_start_inventory() {
+    RfidCommand inventory_cmd = {
+        .head = 0xD9,
+        .len = 0x04,
+        .address = RFID_CAN_ID,
+        .cmd = CMD_INVENTORY_EPC,
+        .ck = 0x02
+    };
+
+    if (!can_write_message((twai_message_t*)&inventory_cmd, sizeof(inventory_cmd))) {
+        ESP_LOGE(TAG, "Failed to send inventory command");
+        return false;
+    }
+
+    // 等待开始响应
+    twai_message_t response;
+    if (!can_read_message(&response, pdMS_TO_TICKS(500))) {
+        ESP_LOGE(TAG, "No response to inventory command");
+        return false;
+    }
+
+    RfidResponse* resp = (RfidResponse*)response.data;
+    if (resp->cmd != CMD_INVENTORY_EPC || resp->flags != 0x00) {
+        ESP_LOGE(TAG, "Invalid inventory start response");
+        return false;
+    }
+
+    ESP_LOGI(TAG, "RFID inventory started");
+    return true;
+}
+
+// 停止盘存标签
+bool rfid_stop_inventory() {
+    RfidCommand stop_cmd = {
+        .head = 0xD9,
+        .len = 0x04,
+        .address = RFID_CAN_ID,
+        .cmd = CMD_STOP_INVENTORY,
+        .ck = 0xF3
+    };
+
+    if (!can_write_message((twai_message_t*)&stop_cmd, sizeof(stop_cmd))) {
+        ESP_LOGE(TAG, "Failed to send stop command");
+        return false;
+    }
+
+    // 等待停止响应
+    twai_message_t response;
+    if (!can_read_message(&response, pdMS_TO_TICKS(500))) {
+        ESP_LOGE(TAG, "No response to stop command");
+        return false;
+    }
+
+    RfidResponse* resp = (RfidResponse*)response.data;
+    if (resp->cmd != CMD_STOP_INVENTORY) {
+        ESP_LOGE(TAG, "Invalid stop response");
+        return false;
+    }
+
+    ESP_LOGI(TAG, "RFID inventory stopped");
+    return true;
+}
+
+// 处理标签数据回调
+typedef void (*RfidTagCallback)(uint8_t* epc, uint16_t epc_len, uint16_t rssi);
+
+// 读取标签数据
+void rfid_read_tags(RfidTagCallback callback) {
+    twai_message_t msg;
+    while (can_read_message(&msg, pdMS_TO_TICKS(100))) {
+        RfidResponse* resp = (RfidResponse*)msg.data;
         
-        if(single_antenna_inventory(reader, ant, records, &count) == RFID_OK) {
-            for(int i=0; i<count; i++) {
-                callback(ant, &records[i]);
+        if (resp->head != 0xD9 || resp->cmd != CMD_INVENTORY_EPC) {
+            continue;
+        }
+
+        // 处理标签数据
+        if (resp->flags == 0x01) {
+            uint8_t* data_ptr = resp->data;
+            uint8_t freq = data_ptr[0];    // 频点参数
+            uint8_t ant = data_ptr[1];    // 天线号
+            uint16_t pc = *(uint16_t*)(data_ptr + 2); // PC值
+            uint8_t* epc = data_ptr + 4;   // EPC数据
+            uint16_t epc_len = resp->len - 10; // 计算EPC长度
+            uint16_t crc = *(uint16_t*)(data_ptr + 4 + epc_len); // CRC
+            uint16_t rssi = *(uint16_t*)(data_ptr + 6 + epc_len); // RSSI
+            
+            if (callback) {
+                callback(epc, epc_len, rssi);
             }
         }
-        
-        // 添加适当延时
-        //delay(50);
-    }
-    return RFID_OK;
-}
-
-// 初始化读写器
-void init_reader(RFIDReader *reader, uint8_t ant_count, uint16_t addr) {
-    reader->ant_count = ant_count;
-    reader->addr = addr;
-    
-    // 默认功率设置（示例）
-    for(int i=0; i<ant_count; i++) {
-        reader->tx_power[i] = 0x1A; // 26dBm
-    }
-}
-
-// 示例用法
-int main() {
-    RFIDReader locker32, locker16;
-    
-    // 初始化32通道读写器
-    init_reader(&locker32, 32, 0x0100);
-    // 初始化16通道读写器
-    init_reader(&locker16, 16, 0x0200);
-    
-    // 全部门扫描示例
-    full_cycle_scan(&locker32, [](uint8_t ant_id, EPCRecord *rec) {
-        printf("Locker32 Door%d: EPC:", ant_id+1);
-        for(int i=0; i<rec->pc/16; i++) { // 根据PC值计算EPC长度
-            printf("%02X ", rec->epc[i]);
+        // 处理停止信号
+        else if (resp->flags == 0x02) {
+            ESP_LOGI(TAG, "RFID inventory auto stopped");
+            break;
         }
-        printf(" RSSI:%.1f dBm\n", rec->rssi/10.0);
-    });
-    
-    return 0;
+    }
 }
