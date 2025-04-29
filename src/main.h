@@ -20,6 +20,10 @@
 #include <screens.h>
 #include <vars.h>
 
+// 在包含其他头文件之前添加
+typedef struct SystemContext SystemContext;
+extern SystemContext sysCtx;
+
 //自己写的库
 #include "mqtt.h"
 #include "myloop.h"
@@ -27,6 +31,7 @@
 #include "openlock.h"
 #include "rfid.h"
 #include "can.h"
+
 
 /*
  若要使用LVGL内置示例和演示，请取消下方对应的include注释

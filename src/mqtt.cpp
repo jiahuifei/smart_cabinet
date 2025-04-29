@@ -276,7 +276,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
       // 解析物品状态数组
       JsonArray item_states = user_info["item_states"];
       for (int i = 0; i < item_states.size() && i < 4; i++) {
-      itemStatusList[i] = item_states[i] == 0 ? "0" : "1";
+      sysCtx.itemStates[i] = item_states[i] == 0 ? "0" : "1";
       }
       item_states_received = true;
       

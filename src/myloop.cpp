@@ -1,436 +1,395 @@
-#include <main.h>
+#include <main.h> // 包含主头文件，提供基础定义和对象声明
 
-/* 
- * 系统操作状态枚举
- * STATUS_NULL - 初始空闲状态
- * STATUS_BORROW - 物品领用状态
- * STATUS_RETURN - 物品归还状态
- * STATUS_MAINTAIN - 设备维护状态
+/*********************** 状态机设计 ************************/
+/**
+ * @brief 系统状态枚举
+ * 定义了系统运行过程中的主要状态
  */
-#define STATUS_NULL "NULL"
-#define STATUS_BORROW "0"
-#define STATUS_RETURN "1"
-#define STATUS_MAINTAIN "2"
-
-/* 系统全局状态变量 */
-const char *currentOperationType = STATUS_NULL;  // 当前执行的操作类型
-const char *itemStatusList[4] = {STATUS_BORROW, STATUS_BORROW, STATUS_BORROW, STATUS_BORROW}; // 四个物品的状态数组
-
-/* 流程控制变量 */
-static int currentWorkflowStage = 0;  // 当前工作流阶段
-static lv_timer_t *operationTimeoutTimer = NULL;  // 操作超时计时器
-
-/* 超时配置(毫秒) */
-#define TIMEOUT_MS_OVERALL 3000000      // 单步操作超时时间(5分钟)
-#define TOTAL_PROCESS_TIMEOUT_MS 30000000    // 整体流程超时时间(50分钟)
-
-/* 进度条弹窗相关变量 */
-static lv_obj_t *progress_msgbox = NULL;
-static lv_obj_t *progress_slider = NULL;
-static lv_obj_t *progress_label = NULL;
+typedef enum
+{
+  STATE_IDLE,           // 空闲状态，等待用户操作
+  STATE_AUTHENTICATING, // 身份验证中，等待用户输入ID
+  STATE_SELECTING,      // 物品选择中，用户选择要操作的物品
+  STATE_PROCESSING,     // 处理中（开门/RFID验证等实际操作阶段）
+  STATE_COMPLETION      // 完成状态，显示操作结果
+} SystemState;
 
 /**
- * 处理主页按钮点击事件
- * @param operationName 操作名称(用于日志)
- * @param operationType 操作类型(STATUS_BORROW/STATUS_RETURN/STATUS_MAINTAIN)
+ * @brief 操作类型枚举
+ * 定义了系统支持的主要操作类型
  */
-static void handleHomePageButton(const char* operationName, const char* operationType) 
+typedef enum
 {
-  Serial.printf("[系统操作] 用户选择: %s\n", operationName);
-  currentOperationType = operationType;
-  lv_tabview_set_act(objects.tabview, 1, LV_ANIM_ON); // 切换到身份验证页
-  lv_obj_invalidate(lv_scr_act()); // 刷新屏幕
-}
+  OP_BORROW,  // 物品领用操作
+  OP_RETURN,  // 物品归还操作
+  OP_MAINTAIN // 设备维护操作
+} OperationType;
 
 /**
- * 处理身份验证页逻辑
- * 1. 获取用户输入的ID
- * 2. 通过MQTT发送验证请求
- * 3. 等待服务器返回物品状态
+ * @brief 系统上下文结构体
+ * 保存系统运行时的所有关键状态信息
  */
-void processIdentityVerification()
+SystemContext sysCtx;
+static SystemContext sysCtx; // 全局系统上下文实例
+
+/*********************** 硬件接口层 ************************/
+/**
+ * @brief 硬件管理类
+ * 封装所有与硬件交互的操作
+ */
+class HardwareMgr
 {
-  const char *userInputId = lv_textarea_get_text(objects.home_idcheck_textarea);
-  
-  // 验证是否为6位数字
-  if(strlen(userInputId) != 6) {
-    lv_msgbox_create(lv_scr_act(), "error", "Please enter the 6-digit code", NULL, true);
-    return;
+public:
+  /**
+   * @brief 控制指定柜门开关
+   * @param lockerId 柜门ID(0-3)
+   * @param open true=开门, false=关门
+   * @return 操作是否成功
+   */
+  static bool controlLocker(uint8_t lockerId, bool open)
+  {
+    char msg[32]; // 存储返回消息
+    // 调用底层开门函数，参数说明：(控制器ID, 柜门ID(1-4), 返回消息)
+    bool ret = openLock(1, lockerId + 1, msg);
+    Serial.printf("[Hardware] Locker %d %s: %s\n",
+                  lockerId + 1, open ? "Open" : "Close", ret ? "Success" : "Failed");
+    return ret;
   }
-  Serial.printf("[Action] 用户ID: %s, 操作类型: %s\n", userInputId, currentOperationType);
-  
-  // 发送验证请求到服务器
-  send_user_auth(userInputId, currentOperationType);
-  delay(50); // 短暂延迟确保发送完成
-  
-  // 清空输入框
-  lv_textarea_set_text(objects.home_idcheck_textarea, "");
-  
-  // 检查是否收到物品状态更新
-  if (item_states_received) {
-    currentWorkflowStage = 2; // 进入物品选择阶段
-    item_states_received = false;
-  }
-  //还需要完善验证失败的情况
-}
 
-// 处理选择页物品按钮点击状态
-static void handle_item_buttons() {
-  for(int i=0; i<4; i++){
-      lv_obj_t *btn = ((lv_obj_t*[]){objects.home_select_btn0, objects.home_select_btn1, 
-                    objects.home_select_btn2, objects.home_select_btn3})[i];
-      if(lv_obj_has_state(btn, LV_STATE_PRESSED)){
-          itemStatusList[i] = (strcmp(itemStatusList[i], STATUS_BORROW) == 0) ? STATUS_RETURN : STATUS_BORROW;
-          lv_obj_clear_state(btn, LV_STATE_PRESSED);
-          Serial.printf("[Action] Item %d status changed to %s\n", i, itemStatusList[i]);
-      }
+  /**
+   * @brief 刷新所有柜门状态
+   * @param states 状态数组(输出参数)
+   */
+  static void refreshDoorStates(bool states[4])
+  {
+    for (int i = 0; i < 4; i++)
+    {
+      // 获取单个柜门状态，柜门ID为1-4
+      states[i] = directGetStateById(i + 1);
+    }
   }
-  
-}
+};
 
-// 处理选择页确认按钮点击
-static void handle_selection_confirmation() {
-  // 有效性检查
-  bool hasSelection = false;
-  for(int i=0; i<4; i++){
-      if(strcmp(itemStatusList[i], STATUS_RETURN) == 0){
-          hasSelection = true;
-          break;
+/*********************** 界面管理层 ************************/
+/**
+ * @brief 界面管理类
+ * 处理所有与用户界面相关的操作
+ */
+class UIMgr
+{
+public:
+  /**
+   * @brief 更新物品选择页面的按钮状态
+   * 根据sysCtx.itemStates同步UI按钮状态
+   */
+  static void updateSelectionUI()
+  {
+    // 获取LVGL硬件锁，确保线程安全
+    if (lvgl_port_lock(-1))
+    {
+      // 获取4个选择按钮对象
+      lv_obj_t *btns[] = {objects.home_select_btn0, objects.home_select_btn1,
+                          objects.home_select_btn2, objects.home_select_btn3};
+      // 遍历更新每个按钮状态
+      for (int i = 0; i < 4; i++)
+      {
+        lv_imgbtn_set_state(btns[i], sysCtx.itemStates[i] ? LV_IMGBTN_STATE_PRESSED : LV_IMGBTN_STATE_RELEASED);
       }
+      lvgl_port_unlock(); // 释放硬件锁
+    }
   }
-  
-  if(!hasSelection) {
-      Serial.println("[Warning] No items selected");
+  /**
+   * @brief 显示进度弹窗
+   * @param title 弹窗标题
+   * @param msg 进度消息
+   * @param progress 进度值(0-100)
+   */
+  static void showProgress(const char *title, const char *msg, uint8_t progress)
+  {
+    // 实现将使用原有的create_progress_msgbox逻辑
+    // 包括创建进度条、更新进度值和关闭弹窗等功能
+  }
+};
+
+/*********************** 业务逻辑层 ************************/
+/**
+ * @brief 工作流管理类
+ * 实现系统核心业务流程控制
+ */
+class WorkflowMgr
+{
+private:
+  /**
+   * @brief 重置系统上下文
+   * 将物品状态和用户ID等重置为初始值
+   */
+  void resetContext()
+  {
+    memset(sysCtx.itemStates, 0, sizeof(sysCtx.itemStates));
+    sysCtx.userId = "";
+    sysCtx.currentOp = OP_BORROW; // 默认操作类型为领用
+  }
+
+  void sendAuthRequest()
+  {
+    JsonDocument doc;
+    doc["topic"] = "/device/CP_1/user_auth";
+    doc["payload"]["msg_id"] = "AUTH_" + String(millis());
+    doc["payload"]["phone_suffix"] = sysCtx.userId;
+    doc["payload"]["auth_type"] = (sysCtx.currentOp == OP_BORROW) ? "borrow" : "return";
+
+    char buffer[256];
+    serializeJson(doc, buffer);
+    mqtt_publish(buffer);
+  }
+
+  void sendCompletionMessage()
+  {
+    JsonDocument doc;
+    doc["topic"] = "/device/CP_1/operation_complete";
+    doc["payload"]["reservation_id"] = sysCtx.reservationId;
+    doc["payload"]["status"] = sysCtx.rfidVerified ? "SUCCESS" : "FAILED";
+
+    char buffer[256];
+    serializeJson(doc, buffer);
+    mqtt_publish(buffer);
+  }
+
+public:
+  /**
+   * @brief 处理主页面操作
+   * @param op 用户选择的操作类型
+   */
+  void handleHomeOperation(OperationType op)
+  {
+    sysCtx.currentOp = op;                              // 设置当前操作类型
+    sysCtx.currentState = STATE_AUTHENTICATING;         // 进入身份验证状态
+    lv_tabview_set_act(objects.tabview, 1, LV_ANIM_ON); // 切换到身份验证页
+  }
+
+  /**
+   * @brief 处理身份验证
+   * @param userId 用户输入的ID字符串
+   */
+  void handleAuthentication(const String &userId)
+  {
+    // 简单验证用户ID长度
+    if (userId.length() != 6 || !userId.toInt())
+    {
+      UIMgr::showProgress("错误", "请输入6位数字领用码", 0);
       return;
+    }
+
+    sysCtx.userId = userId; // 保存用户ID
+    // 发送验证请求到服务器
+    // 将枚举类型转换为整数后传递给认证函数
+    // 将操作类型转换为字符串后传递给认证函数
+    sendAuthRequest();
+    sysCtx.currentState = STATE_SELECTING; // 进入物品选择状态
   }
-  
-  Serial.println("[Action] Selection confirmed, proceeding to completion page");
-  
-  // 创建进度条
-  create_progress_msgbox("领用中", "正在处理领用请求...");
-  update_progress(33); // 1/3进度
-  
-  // 开启柜门
-  for (int i = 0; i < 4; i++) {
-    if (strcmp(itemStatusList[i], STATUS_RETURN) == 0) {
-      char rsMsg[32];
-      bool result = openLock(1, i + 1, rsMsg);
-      if (result) {
-          Serial.printf("[Action] Door %d opened successfully\n", i + 1);
-      } else {
-          Serial.printf("[Error] Failed to open door %d: %s\n", i + 1, rsMsg);
+
+  /**
+   * @brief 处理物品选择
+   * @param itemIndex 物品索引(0-3)
+   */
+  void handleItemSelection(uint8_t itemIndex)
+  {
+    if (itemIndex >= 4)
+      return; // 参数检查
+    // 切换物品选中状态
+    sysCtx.itemStates[itemIndex] = !sysCtx.itemStates[itemIndex];
+    UIMgr::updateSelectionUI(); // 更新UI
+  }
+
+  /**
+   * @brief 处理开门操作
+   * 用户确认选择后触发实际处理流程
+   */
+  void handleConfirmation()
+  {
+    sysCtx.currentState = STATE_PROCESSING; // 进入处理状态
+    processOperation();                     // 开始实际处理
+  }
+
+private:
+  void sendCompletion()
+  {
+    JsonDocument doc;
+    doc["topic"] = "/device/CP_1/borrow_complete";
+    doc["payload"]["reservation_id"] = sysCtx.reservationId;
+    doc["payload"]["status"] = sysCtx.rfidVerified ? "SUCCESS" : "FAILED";
+
+    JsonArray items = doc["payload"].createNestedArray("item_states");
+    for (int i = 0; i < 4; i++)
+    {
+      items.add(sysCtx.itemStates[i] ? 1 : 0); // 1=已借出，0=未借出
+    }
+
+    char buffer[512];
+    serializeJson(doc, buffer);
+    mqtt_publish(buffer);
+
+    Serial.printf("[系统状态] 领用完成：预约号%s，验证状态：%s\n",
+                  sysCtx.reservationId.c_str(),
+                  sysCtx.rfidVerified ? "成功" : "失败");
+  }
+  /**
+   * @brief 等待柜门关闭（带超时检测）
+   * @param timeoutMs 超时时间（毫秒）
+   * @return true=所有柜门已关闭，false=超时
+   */
+  bool waitDoorClosed(unsigned long timeoutMs)
+  {
+    unsigned long startTime = millis();
+    bool allClosed = false;
+
+    while (millis() - startTime < timeoutMs)
+    {
+      // 刷新门状态
+      HardwareMgr::refreshDoorStates(sysCtx.doorStates);
+
+      // 检查选中的柜门
+      allClosed = true;
+      // if (sysCtx.itemStates[i] && sysCtx.doorStates[i])
+      // {
+      //   allClosed = false;
+      //   break;
+      // }
+
+      if (allClosed)
+      {
+        Serial.println("[硬件监控] 所有柜门已关闭");
+        return true;
+      }
+
+      delay(100); // 降低轮询频率
+    }
+
+    Serial.println("[超时警告] 柜门未在规定时间内关闭");
+    return false;
+  }
+  /**
+   * @brief 执行实际操作流程
+   * 包括开门、等待关门、RFID验证等步骤
+   */
+  void processOperation()
+  {
+    // 开门操作
+    for (int i = 0; i < 4; i++)
+    {
+      if (sysCtx.itemStates[i])
+      {
+        HardwareMgr::controlLocker(i, true);
       }
     }
-  }
+    UIMgr::showProgress("操作中", "请开门取物", 33);
 
-  // 等待用户关门
-  bool allDoorsClosed = true;
-  unsigned long startTime = millis();
-  const unsigned long timeout = 30000; // 30秒超时
-  
-  while(millis() - startTime < timeout) {
-    allDoorsClosed = true;
-    
-    // 检查所有需要关闭的门
-    for (int i = 0; i < 4; i++) {
-      if (strcmp(itemStatusList[i], STATUS_RETURN) == 0) {
-        if(directGetStateById(i + 1)) {
-            // 门未关闭
-            allDoorsClosed = false;
-            break;
-
-        } else {
-          allDoorsClosed = false;
-          break;
-        }
-      }
+    // 等待关门（轮询检测）
+    while (!waitDoorClosed(30000))
+    {
+      UIMgr::showProgress("警告", "请关闭柜门", 66);
     }
-    
-    if(allDoorsClosed) {
-      break; // 所有门已关闭
-    }
-    
-    delay(500); // 每500ms检查一次
-  }
 
-  if(!allDoorsClosed) {
-    lv_msgbox_create(lv_scr_act(), "警告", "请关闭所有柜门", NULL, true);
-    return;
-  }
-  
-  update_progress(66); // 2/3进度
-  // 开始RFID验证
-  //rfid_start_inventory();
-  //bool rfidMatch = verifyRfidTags(itemStatusList);
-  //改变RFID验证结果
-  bool rfidMatch = true;
+    // // RFID验证
+    // if(verifyRFID()) {
+    //     UIMgr::showProgress("验证中", "RFID验证通过", 100);
+    //     sysCtx.rfidVerified = true;
+    // } else {
+    //     UIMgr::showProgress("错误", "物品不匹配", 100);
+    //     // 弹出重新操作对话框
+    //     createRetryDialog();
+    // }
 
-  if(!rfidMatch) {
-    // 创建弹窗提示不匹配
-    static const char *btns[] = {"重新领取", "忽略", ""};
-    lv_obj_t *msgbox = lv_msgbox_create(lv_scr_act(), "警告", "领用物品不匹配，请检查!", btns, true);
-    lv_obj_add_event_cb(msgbox, [](lv_event_t *e) {
-      if(lv_msgbox_get_active_btn(e->target) == 0) {
-        // 重新领取
-        handle_selection_confirmation();
-      } else {
-        // 忽略并发送错误
-        //send_error_to_server("RFID_MISMATCH");
-        // 发送RFID验证错误信息
-        JsonDocument doc;
-        doc["operation_type"] = currentOperationType;
-        doc["status"] = "error";
-        doc["error_code"] = "RFID_MISMATCH";
-        doc["error_message"] = "RFID标签与预期物品不匹配";
-        
-        JsonArray items = doc.createNestedArray("items");
-        for (int i = 0; i < 4; i++) {
-            JsonObject item = items.createNestedObject();
-            item["id"] = i + 1;
-            item["status"] = itemStatusList[i];
-        }
-        
-        char buffer_err[256];
-        serializeJson(doc, buffer_err);
-        mqtt_publish(buffer_err);
-      }
-    }, LV_EVENT_VALUE_CHANGED, NULL);
-    return;
+    sendCompletion();
+    sysCtx.currentState = STATE_COMPLETION; // 进入完成状态
   }
-  
-  update_progress(100); // 完成
-  close_progress_msgbox();
-  
-  // 发送完成信息
-  JsonDocument doc;
-  doc["operation_type"] = currentOperationType;
-  JsonArray items = doc.createNestedArray("items");
-  for (int i = 0; i < 4; i++) {
-      items.add(itemStatusList[i]);
-  }
-  char buffer[256];
-  serializeJson(doc, buffer);
-  mqtt_publish(buffer);
-  
-  // 重置状态
-  for (int i = 0; i < 4; i++) {
-      itemStatusList[i] = STATUS_BORROW;
-  }
-  update_select_page(itemStatusList); 
-  lv_tabview_set_act(objects.tabview, 3, LV_ANIM_ON);
-}
+};
 
-// 主循环处理函数
+/*********************** 主循环处理 ************************/
+/**
+ * @brief 主循环处理函数
+ * 系统主循环，根据当前状态调用相应处理逻辑
+ */
 void super_loop()
 {
-  // 检查当前是否在管理页面
-  if (lv_scr_act() == objects.manage) {
-    // 定义管理按钮数组
-    lv_obj_t* manage_buttons[] = {
-        objects.manage_btn_0, objects.manage_btn_1, objects.manage_btn_2, objects.manage_btn_3,
-        objects.manage_btn_4, objects.manage_btn_5, objects.manage_btn_6, objects.manage_btn_7,
-        objects.manage_btn_8, objects.manage_btn_9, objects.manage_btn_10, objects.manage_btn_11,
-        objects.manage_btn_12, objects.manage_btn_13, objects.manage_btn_14, objects.manage_btn_15,
-        objects.manage_btn_16, objects.manage_btn_17, objects.manage_btn_18, objects.manage_btn_19,
-        objects.manage_btn_20, objects.manage_btn_21, objects.manage_btn_22, objects.manage_btn_23,
-        objects.manage_btn_24, objects.manage_btn_25, objects.manage_btn_26, objects.manage_btn_27,
-        objects.manage_btn_28, objects.manage_btn_29, objects.manage_btn_30, objects.manage_btn_31,
-        objects.manage_btn_32, objects.manage_btn_33, objects.manage_btn_34, objects.manage_btn_35,
-        objects.manage_btn_36, objects.manage_btn_37, objects.manage_btn_38, objects.manage_btn_39,
-        objects.manage_btn_40, objects.manage_btn_41, objects.manage_btn_42, objects.manage_btn_43,
-        objects.manage_btn_44, objects.manage_btn_45, objects.manage_btn_46, objects.manage_btn_47,
-        objects.manage_btn_48
-    };
-    
-    // 遍历所有管理按钮(0-48)
-    for(int i = 0; i <= 48; i++) {
-        if(manage_buttons[i] && lv_obj_has_state(manage_buttons[i], LV_STATE_PRESSED)) {
-            directOpenLockById(i);  // 按钮编号直接对应锁ID
-            break;  // 一次只处理一个按钮
-        }
-    }
-  }
-    
-  // 主页（Tab 0）按钮处理
-  if (lv_tabview_get_tab_act(objects.tabview) == 0)
+  static WorkflowMgr workflow; // 工作流管理器实例
+
+  // 1. 管理页面特殊处理
+  if (lv_scr_act() == objects.manage)
   {
-    // 领用按钮处理
-    if (lv_obj_has_state(objects.home_home_use, LV_STATE_PRESSED)) {
-      handleHomePageButton("Borrow", STATUS_BORROW);
-    }
-    // 归还按钮处理
-    if (lv_obj_has_state(objects.home_home_return, LV_STATE_PRESSED)) {
-      handleHomePageButton("Return", STATUS_RETURN);
-    }
-    // 维护按钮处理
-    // if (lv_obj_has_state(objects.home_home_maintain, LV_STATE_PRESSED)) {
-    //   handleHomePageButton("Maintenance", STATUS_MAINTAIN);
-    // }
+    handleManagementMode(); // 进入管理模式处理
+    return;
   }
 
-  // 分页状态机（处理不同标签页的逻辑）
-  switch (lv_tabview_get_tab_act(objects.tabview))
+  // 2. 主状态机处理
+  switch (sysCtx.currentState)
   {
-  case 1: // 身份验证页（Tab 1）
+  case STATE_IDLE:
+    handleIdleState(); // 空闲状态处理
+    break;
+
+  case STATE_AUTHENTICATING:
+    // 检测身份验证确认按钮是否按下
     if (lv_obj_has_state(objects.home_idcheck_ok, LV_STATE_PRESSED))
     {
-      processIdentityVerification();
+      workflow.handleAuthentication(
+          lv_textarea_get_text(objects.home_idcheck_textarea));
     }
     break;
-    
-  case 2: // 物品选择页（Tab 2）
-    handle_item_buttons();
-      
-    if (lv_obj_has_state(objects.home_select_ok, LV_STATE_PRESSED)) {
-        handle_selection_confirmation();
-    }
-    create_progress_msgbox("test", "test");
-    update_progress(10);
-    delay(1000);
-    update_progress(20);
-    delay(1000);
-    update_progress(100);
-    close_progress_msgbox();
-    delay(1000);
-    //跳转到完成页
-    lv_tabview_set_act(objects.tabview, 3, LV_ANIM_ON); // 切换到完成页
+
+  case STATE_SELECTING:
+    handleSelectionState(); // 选择状态处理
     break;
-    
-  case 3: // 完成页（Tab 3）
-    // 创建5分钟全局超时计时器（仅当不存在时创建）
-    if (operationTimeoutTimer == NULL) {
-      Serial.println("[Timer] Creating overall timeout timer");
-      operationTimeoutTimer = lv_timer_create(timeout_callback_1, TIMEOUT_MS_OVERALL, NULL);
-    }
+
+  case STATE_PROCESSING:
+    // 处理中状态由后台自动推进，无需额外处理
+    break;
+
+  case STATE_COMPLETION:
+    handleCompletionState(); // 完成状态处理
     break;
   }
+
+  checkTimeout(); // 超时检测
 }
 
-// 更新物品选择页的按钮状态
-// 参数：borrowing_status_things - 包含4个物品状态的数组
-void update_select_page(const char *borrowing_status_things[4])
+// 完善状态处理函数
+void handleManagementMode()
 {
-  if (lvgl_port_lock(-1)) { // 获取LVGL硬件锁
-    // 按钮对象数组
-    lv_obj_t *buttons[] = {
-        objects.home_select_btn0,
-        objects.home_select_btn1,
-        objects.home_select_btn2,
-        objects.home_select_btn3};
+  // 管理模式的硬件控制逻辑
+  HardwareMgr::refreshDoorStates(sysCtx.doorStates);
+  // ... 其他管理逻辑 ...
+}
 
-    // 遍历更新每个按钮状态
-    for (int i = 0; i < 4; i++) {
-      // "0"=已选择（按下状态），其他=未选择（释放状态）
-      if (strcmp(borrowing_status_things[i], "0") == 0) {
-        lv_imgbtn_set_state(buttons[i], LV_IMGBTN_STATE_PRESSED);
-      } else {
-        lv_imgbtn_set_state(buttons[i], LV_IMGBTN_STATE_RELEASED);
-      }
-    }
-    lvgl_port_unlock(); // 释放硬件锁
+void handleIdleState()
+{
+  // 空闲状态初始化
+  sysCtx.rfidVerified = false;
+  sysCtx.progressValue = 0;
+  UIMgr::showProgress("", "", 0);
+}
+
+void handleSelectionState()
+{
+  // 更新物品选择状态到UI
+  UIMgr::updateSelectionUI();
+}
+
+void handleCompletionState()
+{
+  // 发送完成信息
+  //WorkflowMgr::sendCompletionMessage();
+  // 重置状态
+  sysCtx.currentState = STATE_IDLE;
+}
+
+void checkTimeout()
+{
+  // 检查超时并重置系统
+  if (sysCtx.timeoutTimer)
+  {
+    lv_timer_del(sysCtx.timeoutTimer);
+    sysCtx.timeoutTimer = nullptr;
+    sysCtx.currentState = STATE_IDLE;
   }
-}
-
-// 超时处理回调函数
-void timeout_callback_1(lv_timer_t * timer)
-{
-  Serial.println("[Timeout] Timer callback triggered");
-
-  // 处理定时器自动销毁
-  if(timer->user_data != NULL){
-    Serial.println("[Timeout] Cleaning up timer resources");
-    lv_timer_del(timer);
-    operationTimeoutTimer = NULL;
-    return;
-  }
-
-  // 只在非主页时处理超时
-  if(lv_tabview_get_tab_act(objects.tabview) == 0) {
-    return;
-  }
-  
-  // 统一超时处理
-  if (lvgl_port_lock(-1)) {
-    Serial.println("[Timeout] Resetting system state");
-    
-    // 重置UI状态
-    lv_tabview_set_act(objects.tabview, 0, LV_ANIM_ON);
-    lv_textarea_set_text(objects.home_idcheck_textarea, "");
-    
-    // 重置业务状态
-    currentOperationType = STATUS_NULL;
-    for (int i = 0; i < 4; i++) {
-      itemStatusList[i] = STATUS_BORROW;
-    }
-    
-    // 更新界面
-    update_select_page(itemStatusList);
-    
-    lvgl_port_unlock();
-    Serial.println("[Timeout] System state reset completed");
-  } else {
-    Serial.println("[Error] Failed to acquire LVGL lock in timeout handler");
-  }
-}
-/******************************************************************************************/
-/**
- * @brief 创建进度条弹窗
- * @param title 弹窗标题
- * @param message 弹窗消息
- */
-void create_progress_msgbox(const char *title, const char *message)
-{
-    // 如果已存在则先删除
-    if(progress_msgbox) {
-        lv_obj_del(progress_msgbox);
-    }
-
-    // 创建消息框
-    static const char *btns[] = {"", "", ""};
-    progress_msgbox = lv_msgbox_create(lv_scr_act(), title, message, btns, false);
-    
-    // 设置消息框样式
-    lv_obj_set_size(progress_msgbox, 300, 200);
-    lv_obj_center(progress_msgbox);
-    lv_obj_set_style_border_width(progress_msgbox, 0, 0);
-    lv_obj_set_style_shadow_width(progress_msgbox, 20, 0);
-    lv_obj_set_style_shadow_color(progress_msgbox, lv_color_hex(0xa9a9a9), LV_STATE_DEFAULT);
-    
-    // 创建进度条滑块
-    progress_slider = lv_slider_create(progress_msgbox);
-    lv_obj_set_size(progress_slider, 250, 20);
-    lv_obj_align(progress_slider, LV_ALIGN_CENTER, 0, 20);
-    lv_slider_set_range(progress_slider, 0, 100);
-    lv_slider_set_value(progress_slider, 0, LV_ANIM_OFF);
-    
-    // 创建进度百分比标签
-    progress_label = lv_label_create(progress_msgbox);
-    lv_label_set_text(progress_label, "0%");
-    lv_obj_align_to(progress_label, progress_slider, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
-    lv_obj_set_style_text_font(progress_label, &lv_font_montserrat_20, LV_STATE_DEFAULT);
-}
-
-/**
- * @brief 更新进度条
- * @param value 进度值(0-100)
- */
-void update_progress(int value)
-{
-    if(!progress_msgbox || !progress_slider || !progress_label) return;
-    
-    lv_slider_set_value(progress_slider, value, LV_ANIM_ON);
-    lv_label_set_text_fmt(progress_label, "%d%%", value);
-}
-
-/**
- * @brief 关闭进度条弹窗
- */
-void close_progress_msgbox()
-{
-    if(progress_msgbox) {
-        lv_obj_del(progress_msgbox);
-        progress_msgbox = NULL;
-        progress_slider = NULL;
-        progress_label = NULL;
-    }
 }

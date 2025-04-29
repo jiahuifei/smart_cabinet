@@ -1,0 +1,64 @@
+Date : 2025-04-29 21:49:22
+Directory : d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src
+Total : 39 files,  38467 codes, 1586 comments, 1049 blanks, all 41102 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| C        |         15 |     22,183 |        494 |        505 |     23,182 |
+| C++      |         24 |     16,284 |      1,092 |        544 |     17,920 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                       | files      | code       | comment    | blank      | total      |
++------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                          |         39 |     38,467 |      1,586 |      1,049 |     41,102 |
++------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                                                   | language | code       | comment    | blank      | total      |
++------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\actions.h                             | C++      |         10 |          0 |          6 |         16 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\can.cpp                               | C++      |         31 |         27 |         11 |         69 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\can.h                                 | C++      |          7 |          0 |          5 |         12 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\eez-flow.cpp                          | C++      |     11,082 |        166 |          1 |     11,249 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\eez-flow.h                            | C++      |      4,163 |        399 |        238 |      4,800 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\fonts.h                               | C++      |         13 |          0 |          6 |         19 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\images.c                              | C        |         11 |          0 |          2 |         13 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\images.h                              | C++      |         26 |          0 |          8 |         34 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\js.cpp                                | C++      |         41 |         16 |          9 |         66 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\js.h                                  | C++      |          5 |          0 |          3 |          8 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\main.cpp                              | C++      |         35 |         10 |         16 |         61 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\main.h                                | C++      |         22 |         10 |         10 |         42 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\mqtt.cpp                              | C++      |        254 |        122 |         63 |        439 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\mqtt.h                                | C++      |         20 |          3 |          5 |         28 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\myloop.cpp                            | C++      |        229 |        125 |         42 |        396 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\myloop.h                              | C++      |         36 |          0 |         10 |         46 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\openlock.cpp                          | C++      |        143 |         71 |         25 |        239 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\openlock.h                            | C++      |         16 |          2 |          4 |         22 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\rfid.cpp                              | C++      |          0 |        138 |         26 |        164 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\rfid.h                                | C++      |          3 |          0 |          2 |          5 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\screens.c                             | C        |      1,082 |         67 |         21 |      1,170 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\screens.h                             | C++      |         94 |          0 |         12 |        106 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\structs.h                             | C++      |         10 |          0 |         13 |         23 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\styles.c                              | C        |          5 |          0 |          4 |          9 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\styles.h                              | C++      |         10 |          0 |          6 |         16 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\ui.c                                  | C        |        557 |          1 |         17 |        575 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\ui.h                                  | C++      |         20 |          0 |         11 |         31 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\ui_font_111.c                         | C        |      2,272 |        138 |        139 |      2,549 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\ui_font_222.c                         | C        |      7,520 |        126 |        127 |      7,773 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\ui_font_30.c                          | C        |      4,240 |        138 |        139 |      4,517 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\ui_image_goggles.c                    | C        |        812 |          3 |          7 |        822 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\ui_image_goggles_grey_.c              | C        |        812 |          3 |          7 |        822 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\ui_image_helmet.c                     | C        |        812 |          3 |          7 |        822 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\ui_image_helmet__grey_.c              | C        |        812 |          3 |          7 |        822 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\ui_image_reflective_clothing.c        | C        |        812 |          3 |          7 |        822 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\ui_image_reflective_clothing__grey_.c | C        |        812 |          3 |          7 |        822 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\ui_image_toe_cap.c                    | C        |        812 |          3 |          7 |        822 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\ui_image_toe_cap_grey_.c              | C        |        812 |          3 |          7 |        822 |
+| d:\Users\hui\Desktop\ESP32\hui\smart_cabinet\pio\LVGL_TRANSPLANT\src\vars.h                                | C++      |         14 |          3 |         12 |         29 |
+| Total                                                                                                      |          |     38,467 |      1,586 |      1,049 |     41,102 |
++------------------------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
