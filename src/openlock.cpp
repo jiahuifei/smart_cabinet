@@ -206,3 +206,45 @@ bool directOpenLockById(int lockId) {
     return openLock(boardNo, lockNo, rsMsg);
 }
 
+// 通过锁ID直接读取锁状态
+// 参数：lockId - 锁ID(0-48)
+//       rsMsg[OUT] - 返回状态消息（"开"/"关"）
+// 返回：true-读取成功 / false-读取失败
+bool directGetLockStateById(int lockId, char *rsMsg) {
+    uint8_t boardNo = 0;
+    uint8_t lockNo = 0;
+    
+    // 根据锁ID映射板地址和锁地址
+    if (lockId >= 1 && lockId <= 24) {
+        // 0x02板的1-24号锁
+        boardNo = 0x02;
+        lockNo = lockId;
+    } else if (lockId >= 25 && lockId <= 36) {
+        // 0x03板的1-12号锁
+        boardNo = 0x03;
+        lockNo = lockId - 24;
+    } else if (lockId >= 37 && lockId <= 48) {
+        // 0x01板的1-12号锁
+        boardNo = 0x01;
+        lockNo = lockId - 36;
+    } else if (lockId == 0) {
+        // 特殊ID 0 - 查询所有锁状态
+        strcpy(rsMsg, "不支持查询所有锁状态");
+        return false;
+    } else {
+        strcpy(rsMsg, "无效的锁ID");
+        return false;
+    }
+    
+    return getState(boardNo, lockNo, rsMsg);
+}
+// 通过锁ID直接读取锁状态（返回布尔值表示开/关）
+// 参数：lockId - 锁ID(0-48)
+// 返回：true-锁处于开状态 / false-锁处于关状态或查询失败
+bool isLockOpen(int lockId) {
+    char rsMsg[32];
+    if (directGetLockStateById(lockId, rsMsg)) {
+        return strcmp(rsMsg, VALID) == 0; // 如果状态是"开"则返回true
+    }
+    return false; // 查询失败默认返回false
+}

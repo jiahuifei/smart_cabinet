@@ -14,6 +14,7 @@ void create_progress_msgbox(const char *title, const char *message);
 void update_progress(int value);
 void close_progress_msgbox();
 
+
 struct MessageBoxInfo {
     lv_obj_t* msgbox;
     lv_timer_t* timer;
