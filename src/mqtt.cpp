@@ -363,7 +363,6 @@ void mqtt_initialize() {
   
   client.setServer(mqtt_broker, mqtt_port);
   client.setCallback(callback);
-  delay(5000);
   
   while (!client.connected()) {
     String client_id = "esp8266-client-" + String(WiFi.macAddress());

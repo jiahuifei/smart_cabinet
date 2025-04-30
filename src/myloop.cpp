@@ -138,6 +138,7 @@ static void handle_selection_confirmation() {
       if (strcmp(itemStatusList[0], STATUS_RETURN) == 0||strcmp(itemStatusList[1], STATUS_RETURN) == 0||strcmp(itemStatusList[2], STATUS_RETURN) == 0) {
 
           bool result = directOpenLockById(door1);
+          delay(1000);
           if (result) {
               Serial.printf("[Action] Door %d opened successfully\n", door1 + 1);
           } else {
@@ -147,6 +148,7 @@ static void handle_selection_confirmation() {
       if (strcmp(itemStatusList[3], STATUS_RETURN) == 0) {
 
           bool result = directOpenLockById(door2);
+          delay(1000);
           if (result) {
               Serial.printf("[Action] Door %d opened successfully\n", door2 + 1);
           } else {
@@ -179,6 +181,7 @@ void super_loop()
 {
   // 检查当前是否在管理页面
   if (lv_scr_act() == objects.manage) {
+    Serial.println("当前在管理页面");
     // 定义管理按钮数组
     lv_obj_t* manage_buttons[] = {
         objects.manage_btn_0, objects.manage_btn_1, objects.manage_btn_2, objects.manage_btn_3,
@@ -200,14 +203,16 @@ void super_loop()
     for(int i = 0; i <= 48; i++) {
         if(manage_buttons[i] && lv_obj_has_state(manage_buttons[i], LV_STATE_PRESSED)) {
             directOpenLockById(i);  // 按钮编号直接对应锁ID
+            Serial.printf("[Action] 按钮 %d 按下，打开锁 %d\n", i, i);
             break;  // 一次只处理一个按钮
         }
     }
   }
     
   // 主页（Tab 0）按钮处理
-  if (lv_tabview_get_tab_act(objects.tabview) == 0)
+  if (lv_tabview_get_tab_act(objects.tabview) == 0 && lv_scr_act() == objects.main)
   {
+    Serial.println("当前在主页");
     // 领用按钮处理
     if (lv_obj_has_state(objects.home_home_use, LV_STATE_PRESSED)) {
       handleHomePageButton("Borrow", STATUS_BORROW);
@@ -225,6 +230,7 @@ void super_loop()
   // 分页状态机（处理不同标签页的逻辑）
   switch (lv_tabview_get_tab_act(objects.tabview))
   {
+    Serial.println("当前在其他页");
   case 1: // 身份验证页（Tab 1）
     if (lv_obj_has_state(objects.home_idcheck_ok, LV_STATE_PRESSED))
     {
