@@ -57,9 +57,7 @@ bool lockCmd(uint8_t cmdNo, uint8_t boardNo, uint8_t lockNo, char *rsMsg) {
     sendBuffer[1] = boardNo;   // 板地址范围：0x01-0x20（1-32号控制板）
     sendBuffer[2] = lockNo;    // 锁地址范围：0x01-0x18（1-24号锁）
     
-    // 问题1：固定值未按协议设置
-    // 原代码：sendBuffer[3] = 0x11;
-    // 修正后：
+
     if (cmdNo == 0x80) {      // 读状态指令
         sendBuffer[3] = 0x33; // 协议规定的固定值
     } else if (cmdNo >= 0x9A && cmdNo <= 0x9D) { // 特殊指令
@@ -78,6 +76,13 @@ bool lockCmd(uint8_t cmdNo, uint8_t boardNo, uint8_t lockNo, char *rsMsg) {
 
         // 响应有效性检查（长度5字节且指令码匹配）
         if (len == 5 && response[0] == cmdNo) {
+            // 验证校验码是否正确
+            uint8_t checksum = response[0] ^ response[1] ^ response[2] ^ response[3];
+            if (checksum != response[4]) {
+                strcpy(rsMsg, EXCEPTION);
+                return false;
+            }
+            
             if (cmdNo == 0x80) { // 状态查询指令处理
                 /* 协议响应格式：
                    [0]指令码 [1]板地址 [2]锁地址 [3]状态码 [4]校验码
@@ -88,6 +93,9 @@ bool lockCmd(uint8_t cmdNo, uint8_t boardNo, uint8_t lockNo, char *rsMsg) {
                     strcpy(rsMsg, VALID);  // 开锁状态
                 } else if (response[3] == 0x00) {
                     strcpy(rsMsg, INVALID);// 关锁状态
+                } else {
+                    // 处理其他可能的状态码
+                    sprintf(rsMsg, "状态码:0x%02X", response[3]);
                 }
                 return true; // 只要收到响应即视为成功
             } else {// 控制类指令处理
@@ -146,11 +154,15 @@ bool closePower(uint8_t boardNo, uint8_t lockNo, char *rsMsg) {
 }
 
 // 5. 查询单个状态（协议指令0x80）
-// 参数：boardNo[IN] 板地址
-//       lockNo[IN]  锁地址
+// 参数：boardNo[IN] 板地址(0x01-0x20)
+//       lockNo[IN]  锁地址(0x01-0x18)
 //       rsMsg[OUT]  返回状态消息（VALID/INVALID）
 // 返回：true-获取成功 / false-获取失败
 bool getState(uint8_t boardNo, uint8_t lockNo, char *rsMsg) {
+    if (boardNo < 0x01 || boardNo > 0x20 || lockNo < 0x01 || lockNo > 0x40) {
+        strcpy(rsMsg, "参数错误");
+        return false;
+    }
     return lockCmd(0x80, boardNo, lockNo, rsMsg);
 }
 
@@ -207,7 +219,7 @@ bool directOpenLockById(int lockId) {
 }
 
 // 通过锁ID直接读取锁状态
-// 参数：lockId - 锁ID(0-48)
+// 参数：lockId - 锁ID(1-48)
 //       rsMsg[OUT] - 返回状态消息（"开"/"关"）
 // 返回：true-读取成功 / false-读取失败
 bool directGetLockStateById(int lockId, char *rsMsg) {
@@ -236,17 +248,22 @@ bool directGetLockStateById(int lockId, char *rsMsg) {
         return false;
     }
     
-    return getState(boardNo, lockNo, rsMsg);
+    // 调试信息
+    Serial.printf("查询锁状态: 板地址=0x%02X, 锁地址=0x%02X\n", boardNo, lockNo);
+    
+    bool result = getState(boardNo, lockNo, rsMsg);
+    Serial.printf("锁状态查询结果: %s\n", rsMsg);
+    return result;
 }
 // 通过锁ID直接读取锁状态（返回布尔值表示开/关）
-// 参数：lockId - 锁ID(0-48)
+// 参数：lockId - 锁ID(1-48)
 // 返回：true-锁处于开状态 / false-锁处于关状态或查询失败
 bool isLockOpen(int lockId) {
-    char rsMsg[32];
-    if (directGetLockStateById(lockId, rsMsg)) {
-        Serial.printf("查询结果：%s\n", rsMsg);
-        return strcmp(rsMsg, VALID) == 0; // 如果状态是"开"则返回true
+    char rsMsg_1[32];
+    if (directGetLockStateById(lockId, rsMsg_1)) {
+        Serial.printf("锁 %d 查询结果：%s\n", lockId,rsMsg_1);
+        return strcmp(rsMsg_1, VALID) == 0; // 如果状态是"开"则返回true
     }
-    Serial.printf("查询结果：%s\n", rsMsg);
+    Serial.printf("锁 %d 查询失败：%s\n", lockId, rsMsg_1);
     return false; // 查询失败默认返回false
 }

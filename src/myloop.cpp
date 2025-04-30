@@ -98,9 +98,7 @@ bool waitForLockStateChangeWithTimeout(int door1, int door2, unsigned long timeo
       Serial.println("[Warning] 等待锁状态变化超时");
       return false;
     }
-    
-
-    
+  
     // 短暂延迟
     delay(500);
   }

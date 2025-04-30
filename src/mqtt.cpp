@@ -185,38 +185,38 @@ void report_door_status(uint8_t door_num, DoorStatus status, uint8_t item_type) 
 // 参数：door-门号，action-操作类型，duration-持续时间
 // 返回：操作是否成功
 // 使用示例：bool success = control_door(1, "open", 5);
-bool control_door(uint8_t door, String action, uint8_t duration) {
-  if (door >= DOOR_COUNT) {
-      Serial.printf("无效门编号: %d\n", door);
-      return false;
-  }
+// bool control_door(uint8_t door, String action, uint8_t duration) {
+//   if (door >= DOOR_COUNT) {
+//       Serial.printf("无效门编号: %d\n", door);
+//       return false;
+//   }
 
-  char rsMsg[32];
-  bool result = false;
-  // 门控硬件寻址算法
-  // 板地址计算：每块控制板管理24个锁，通过整除运算确定板号
-  // 锁地址计算：取余运算确定板内具体锁编号
-  // 示例：door=25 → boardNo=2, lockNo=2
-  uint8_t boardNo = 1 + door / 24;
-  uint8_t lockNo = 1 + door % 24;
+//   char rsMsg[32];
+//   bool result = false;
+//   // 门控硬件寻址算法
+//   // 板地址计算：每块控制板管理24个锁，通过整除运算确定板号
+//   // 锁地址计算：取余运算确定板内具体锁编号
+//   // 示例：door=25 → boardNo=2, lockNo=2
+//   uint8_t boardNo = 1 + door / 24;
+//   uint8_t lockNo = 1 + door % 24;
   
-  // 根据动作类型调用硬件接口
-  if (action == "open") {
-      result = openLock(boardNo, lockNo, rsMsg);
-  } 
-  else if (action == "open_all") {
-      result = openAllLock(boardNo, rsMsg);
-  }
-  else if (action == "power_on") {
-      result = openPower(boardNo, lockNo, rsMsg);
-  }
-  else if (action == "power_off") {
-      result = closePower(boardNo, lockNo, rsMsg);
-  }
+//   // 根据动作类型调用硬件接口
+//   if (action == "open") {
+//       result = openLock(boardNo, lockNo, rsMsg);
+//   } 
+//   else if (action == "open_all") {
+//       result = openAllLock(boardNo, rsMsg);
+//   }
+//   else if (action == "power_on") {
+//       result = openPower(boardNo, lockNo, rsMsg);
+//   }
+//   else if (action == "power_off") {
+//       result = closePower(boardNo, lockNo, rsMsg);
+//   }
   
-  Serial.printf("门控制结果 [板%d 锁%d]: %s\n", boardNo, lockNo, rsMsg);
-  return result;
-}
+//   Serial.printf("门控制结果 [板%d 锁%d]: %s\n", boardNo, lockNo, rsMsg);
+//   return result;
+// }
 
 // MQTT消息回调函数：处理接收到的MQTT消息
 // @param topic: 消息主题
@@ -245,25 +245,25 @@ void callback(char* topic, byte* payload, unsigned int length) {
       return;
   }
 
-  // 门控制指令处理
-  if(String(topic) == String("/server/" DEVICE_ID "/door_control")) {
-      uint8_t door = doc["door_number"];
-      String action = doc["action"].as<String>();
-      uint8_t duration = doc["duration"];  // 单位：秒
+  // // 门控制指令处理
+  // if(String(topic) == String("/server/" DEVICE_ID "/door_control")) {
+  //     uint8_t door = doc["door_number"];
+  //     String action = doc["action"].as<String>();
+  //     uint8_t duration = doc["duration"];  // 单位：秒
       
-      // 添加操作延时
-      if (duration > 0) {
-          unsigned long start = millis();
-          while (millis() - start < duration * 1000) {
-              control_door(door, action, duration);
-          }
-      } else {
-          control_door(door, action, duration);
-      }
-  }
+  //     // 添加操作延时
+  //     if (duration > 0) {
+  //         unsigned long start = millis();
+  //         while (millis() - start < duration * 1000) {
+  //             control_door(door, action, duration);
+  //         }
+  //     } else {
+  //         control_door(door, action, duration);
+  //     }
+  // }
   
   // 用户认证响应处理部分
-  else if(String(topic) == String("/server/" DEVICE_ID "/auth_response")) {
+  else if(String(topic) == String("/server/CP_1/auth_response")) {
     Serial.println("2");
     // 提取关联ID用于追踪请求
     const char* correlation_id = doc["correlation_id"]; 
@@ -379,7 +379,7 @@ JsonObject network = doc["network"].to<JsonObject>();
 JsonArray sensors = doc["sensors"].to<JsonArray>();
 
 client.subscribe("/server/" DEVICE_ID "/door_control");
-client.subscribe("/server/" DEVICE_ID "/auth_response");
+client.subscribe("/server/CP_1/auth_response");
 send_device_register();
 // 订阅必要主题
 // client.subscribe(("/server/" DEVICE_ID "/door_control"));
