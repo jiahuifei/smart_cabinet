@@ -244,7 +244,9 @@ bool directGetLockStateById(int lockId, char *rsMsg) {
 bool isLockOpen(int lockId) {
     char rsMsg[32];
     if (directGetLockStateById(lockId, rsMsg)) {
+        Serial.printf("查询结果：%s\n", rsMsg);
         return strcmp(rsMsg, VALID) == 0; // 如果状态是"开"则返回true
     }
+    Serial.printf("查询结果：%s\n", rsMsg);
     return false; // 查询失败默认返回false
 }
