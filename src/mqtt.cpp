@@ -238,6 +238,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   // 2. 建议定期使用doc.capacity()检查内存使用
   JsonDocument doc;
   DeserializationError error = deserializeJson(doc, message);
+  Serial.println("1");
   if (error) {
       Serial.print("deserializeJson() failed: ");
       Serial.println(error.f_str());
@@ -263,6 +264,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   
   // 用户认证响应处理部分
   else if(String(topic) == String("/server/" DEVICE_ID "/auth_response")) {
+    Serial.println("2");
     // 提取关联ID用于追踪请求
     const char* correlation_id = doc["correlation_id"]; 
     Serial.printf("处理认证响应: %s\n", correlation_id);
@@ -279,6 +281,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
       itemStatusList[i] = item_states[i] == 0 ? "0" : "1";
       }
       item_states_received = true;
+      Serial.print("3");
       
       // 解析门分配信息
       JsonObject door_assignment = doc["door_assignment"];
@@ -360,13 +363,13 @@ void mqtt_initialize() {
   
   client.setServer(mqtt_broker, mqtt_port);
   client.setCallback(callback);
+  delay(5000);
   
   while (!client.connected()) {
     String client_id = "esp8266-client-" + String(WiFi.macAddress());
     if (client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
-      client.subscribe("/server/" DEVICE_ID "/door_control");
-      client.subscribe("/server/" DEVICE_ID "/auth_response");
-      send_device_register();
+
+      Serial.println("Connected to MQTT broker");
     }
   }
 
@@ -375,11 +378,15 @@ JsonDocument doc;
 JsonObject network = doc["network"].to<JsonObject>();
 JsonArray sensors = doc["sensors"].to<JsonArray>();
 
+client.subscribe("/server/" DEVICE_ID "/door_control");
+client.subscribe("/server/" DEVICE_ID "/auth_response");
+send_device_register();
 // 订阅必要主题
-client.subscribe(("/server/" DEVICE_ID "/door_control"));
-client.subscribe(("/server/" DEVICE_ID "/auth_response"));
+// client.subscribe(("/server/" DEVICE_ID "/door_control"));
+// client.subscribe(("/server/" DEVICE_ID "/auth_response"));
+Serial.println("Connected to MQTT broker");
 
-send_device_register(); // 发送注册信息
+
 }
 
 // 主循环处理（需要在Arduino loop中持续调用）

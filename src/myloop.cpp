@@ -90,19 +90,23 @@ bool waitForLockStateChangeWithTimeout(int door1, int door2, unsigned long timeo
   // 更新初始进度
   update_progress(33);
   
-  while (isLockOpen(door1) || isLockOpen(door2)) {
+  while (!isLockOpen(door1) && !isLockOpen(door2)) {
+    Serial.println(isLockOpen(door1));
+    Serial.println(isLockOpen(door2));
     // 检查是否超时
     if (millis() - startTime > timeout_ms) {
       Serial.println("[Warning] 等待锁状态变化超时");
       return false;
     }
     
-    // 更新进度
-    update_progress(66);
+
     
     // 短暂延迟
     delay(500);
   }
+      // 更新进度
+      update_progress(66);
+      delay(1000);
   
   // 锁状态已变化
   update_progress(100);
@@ -122,7 +126,7 @@ static void handle_selection_confirmation() {
   
   if(!hasSelection) {
       Serial.println("[Warning] No items selected");
-      return;
+      //return;
   }
   
   Serial.println("[Action] Selection confirmed, proceeding to completion page");
@@ -130,6 +134,8 @@ static void handle_selection_confirmation() {
   // 开启柜门
   int door1 = 5;//这里需要查询数据库修改
   int door2 = 37;//这里需要查询数据库修改
+
+
 
       if (strcmp(itemStatusList[0], STATUS_RETURN) == 0||strcmp(itemStatusList[1], STATUS_RETURN) == 0||strcmp(itemStatusList[2], STATUS_RETURN) == 0) {
 
@@ -149,13 +155,13 @@ static void handle_selection_confirmation() {
               Serial.printf("[Error] Failed to open door %d\n", door2 + 1);
           }
       }
-      create_progress_msgbox("Plase take things!", "Plase take things, and open the door!");
+      create_progress_msgbox("Plase take things!", "Plase take things, and close the door!");
       //进度条到33%
       update_progress(33);
         // 使用带超时的等待函数，设置30秒超时
       bool doorsClosed = waitForLockStateChangeWithTimeout(door1, door2, 30000);
       if (!doorsClosed) {
-        // 超时处理
+        // 超时处理待完善
         Serial.println("[Warning] 等待关门超时，强制继续流程");
       } else {
         Serial.println("[Action] 所有柜门已关闭");
@@ -240,6 +246,7 @@ void super_loop()
     handle_item_buttons();
       
     if (lv_obj_has_state(objects.home_select_ok, LV_STATE_PRESSED)) {
+      Serial.println("[Action] 选择确认按钮按下");
         handle_selection_confirmation();
     }
 
