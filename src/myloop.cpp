@@ -59,13 +59,8 @@ void processIdentityVerification()
   
   // 清空输入框
   lv_textarea_set_text(objects.home_idcheck_textarea, "");
-  
-  // 检查是否收到物品状态更新
-  if (item_states_received) {
+  lv_obj_invalidate(lv_scr_act()); // 刷新屏幕
 
-    currentWorkflowStage = 2; // 进入物品选择阶段
-    item_states_received = false;
-  }
 }
 
 // 处理选择页物品按钮点击状态
@@ -230,6 +225,14 @@ void super_loop()
     if (lv_obj_has_state(objects.home_idcheck_ok, LV_STATE_PRESSED))
     {
       processIdentityVerification();
+        // 检查是否收到物品状态更新
+    if (item_states_received) {
+      currentWorkflowStage = 2; // 进入物品选择阶段
+      Serial.println("[Action] 物品状态更新完成，进入物品选择页面");
+      lv_tabview_set_act(objects.tabview, 2, LV_ANIM_ON); // 切换到选择页
+      lv_obj_invalidate(lv_scr_act()); // 刷新屏幕
+      item_states_received = false;
+    }
     }
     break;
     
@@ -239,16 +242,8 @@ void super_loop()
     if (lv_obj_has_state(objects.home_select_ok, LV_STATE_PRESSED)) {
         handle_selection_confirmation();
     }
-    create_progress_msgbox("test", "test");
-    update_progress(10);
-    delay(1000);
-    update_progress(20);
-    delay(1000);
-    update_progress(100);
-    close_progress_msgbox();
-    delay(1000);
-    //跳转到完成页
-    lv_tabview_set_act(objects.tabview, 3, LV_ANIM_ON); // 切换到完成页
+
+    //lv_tabview_set_act(objects.tabview, 3, LV_ANIM_ON); // 切换到完成页
     break;
     
   case 3: // 完成页（Tab 3）
