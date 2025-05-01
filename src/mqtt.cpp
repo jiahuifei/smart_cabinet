@@ -227,23 +227,28 @@ void callback(char* topic, byte* payload, unsigned int length) {
   String message;
   for (int i=0; i<length; i++) message += (char)payload[i];
   
-  Serial.print("Message arrived in topic: ");
+  Serial.print("收到MQTT消息，主题: ");
   Serial.println(topic);
-  Serial.print("Message: ");
+  Serial.print("消息内容: ");
   Serial.println(message);
 
-  // 创建JSON文档对象（512字节容量）
-  // 容量根据MQTT消息最大长度设定，需注意：
-  // 1. 容量不足会导致解析失败
-  // 2. 建议定期使用doc.capacity()检查内存使用
+  // 创建JSON文档对象
   JsonDocument doc;
   DeserializationError error = deserializeJson(doc, message);
-  Serial.println("1");
+  
   if (error) {
-      Serial.print("deserializeJson() failed: ");
+      Serial.print("JSON解析失败: ");
       Serial.println(error.f_str());
       return;
   }
+
+  // 构建预期的主题字符串
+  String expected_control_topic = String("/server/") + String(DEVICE_ID) + String("/door_control");
+  String expected_auth_topic = String("/server/") + String(DEVICE_ID) + String("/auth_response");
+  
+  Serial.printf("预期控制主题: %s\n", expected_control_topic.c_str());
+  Serial.printf("预期认证主题: %s\n", expected_auth_topic.c_str());
+  Serial.printf("实际接收主题: %s\n", topic);
 
   // // 门控制指令处理
   // if(String(topic) == String("/server/" DEVICE_ID "/door_control")) {
@@ -263,7 +268,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   // }
   
   // 用户认证响应处理部分
-  else if(String(topic) == String("/server/CP_1/auth_response")) {
+  if(String(topic) == String("/server/CP_1/auth_response")) {
     Serial.println("2");
     // 提取关联ID用于追踪请求
     const char* correlation_id = doc["correlation_id"]; 
@@ -370,6 +375,11 @@ void mqtt_initialize() {
 
       Serial.println("Connected to MQTT broker");
     }
+    else {
+      Serial.printf("连接失败，错误码: %d\n", client.state());
+      delay(500);
+      //retry_count++;
+  }
   }
 
 // 更新后的JSON处理
@@ -377,12 +387,18 @@ JsonDocument doc;
 JsonObject network = doc["network"].to<JsonObject>();
 JsonArray sensors = doc["sensors"].to<JsonArray>();
 
-client.subscribe("/server/" DEVICE_ID "/door_control");
-client.subscribe("/server/CP_1/auth_response");
+
+
 send_device_register();
-// 订阅必要主题
-// client.subscribe(("/server/" DEVICE_ID "/door_control"));
-// client.subscribe(("/server/" DEVICE_ID "/auth_response"));
+
+  // 确保订阅主题正确
+  String auth_topic = "/server/" DEVICE_ID "/auth_response";
+  String control_topic = "/server/" DEVICE_ID "/door_control";
+  Serial.printf("订阅主题: %s\n", auth_topic.c_str());
+  client.subscribe(auth_topic.c_str());
+  Serial.printf("订阅主题: %s\n", control_topic.c_str());
+  client.subscribe(control_topic.c_str());
+
 Serial.println("Connected to MQTT broker");
 
 

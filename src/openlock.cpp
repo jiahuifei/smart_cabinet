@@ -217,8 +217,11 @@ bool directOpenLockById(int lockId) {
     } else {
         return false;
     }
+    Serial.printf("映射结果: 板地址=0x%02X, 锁地址=0x%02X\n", boardNo, lockNo);
+    bool result = openLock(boardNo, lockNo, rsMsg_1);
+    Serial.printf("开锁结果: %s, 成功: %d\n", rsMsg_1, result);
     
-    return openLock(boardNo, lockNo, rsMsg_1);
+    return result;
 }
 
 // 通过锁ID直接读取锁状态
