@@ -26,6 +26,8 @@ typedef struct _objects_t {
     lv_obj_t *home_select_btn2;
     lv_obj_t *home_select_btn3;
     lv_obj_t *home_select_text;
+    lv_obj_t *grid_1_text;
+    lv_obj_t *grid_2_text;
     lv_obj_t *home_select_ok;
     lv_obj_t *home_final;
     lv_obj_t *home_final_text;

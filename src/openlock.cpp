@@ -69,7 +69,7 @@ bool queryDoorStatus(uint8_t b_address, uint8_t l_address) {
     frame[4] = calculate_xor_checksum(frame[0], frame[1], frame[2], frame[3]);// 校验码
   
     RS485.write(frame, 5);
-    Serial.print("开锁指令已发送: ");
+    Serial.print("查询指令已发送: ");
     for(int i = 0; i < 5; i++){
       Serial.printf("%02X ", frame[i]);
     }
@@ -91,11 +91,11 @@ bool queryDoorStatus(uint8_t b_address, uint8_t l_address) {
           }
           Serial.println();
           if(response[3] == 0x11) {
-            Serial.println("开锁成功");
+            Serial.println("打开状态");
             return true; 
           }
           else if(response[3] == 0x00){
-            Serial.println("开锁失败");
+            Serial.println("关闭状态");
             return false;
           }
           else{
@@ -167,7 +167,7 @@ bool directOpenLockById(int lockId) {
     return sendLockCommand(boardNo, lockNo);
 }
 
-// 通过锁ID直接开锁
+// 通过锁ID直接读取状态
 bool isLockOpen(int lockId) {
     uint8_t boardNo = 0;
     uint8_t lockNo = 0;

@@ -173,21 +173,21 @@ void create_screen_main() {
                             // home_select_btn0
                             lv_obj_t *obj = lv_imgbtn_create(parent_obj);
                             objects.home_select_btn0 = obj;
-                            lv_obj_set_pos(obj, 27, 0);
+                            lv_obj_set_pos(obj, 75, 0);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, 192);
-                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_RELEASED, NULL, &img_goggles_grey_, NULL);
-                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_PRESSED, NULL, &img_goggles, NULL);
-                            lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_RELEASED, NULL, &img_goggles, NULL);
+                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_PRESSED, NULL, &img_goggles_grey_, NULL);
+                            lv_obj_add_flag(obj, LV_OBJ_FLAG_CHECKABLE);
                         }
                         {
                             // home_select_btn1
                             lv_obj_t *obj = lv_imgbtn_create(parent_obj);
                             objects.home_select_btn1 = obj;
-                            lv_obj_set_pos(obj, 278, 0);
+                            lv_obj_set_pos(obj, 305, 0);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, 192);
-                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_RELEASED, NULL, &img_reflective_clothing__grey_, NULL);
-                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_PRESSED, NULL, &img_reflective_clothing, NULL);
-                            lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_RELEASED, NULL, &img_reflective_clothing, NULL);
+                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_PRESSED, NULL, &img_reflective_clothing__grey_, NULL);
+                            lv_obj_add_flag(obj, LV_OBJ_FLAG_CHECKABLE);
                         }
                         {
                             // home_select_btn2
@@ -195,34 +195,52 @@ void create_screen_main() {
                             objects.home_select_btn2 = obj;
                             lv_obj_set_pos(obj, 528, 0);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, 192);
-                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_RELEASED, NULL, &img_toe_cap_grey_, NULL);
-                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_PRESSED, NULL, &img_toe_cap, NULL);
-                            lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_RELEASED, NULL, &img_toe_cap, NULL);
+                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_PRESSED, NULL, &img_toe_cap_grey_, NULL);
+                            lv_obj_add_flag(obj, LV_OBJ_FLAG_CHECKABLE);
                         }
                         {
                             // home_select_btn3
                             lv_obj_t *obj = lv_imgbtn_create(parent_obj);
                             objects.home_select_btn3 = obj;
-                            lv_obj_set_pos(obj, 27, 207);
+                            lv_obj_set_pos(obj, 75, 207);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, 192);
-                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_RELEASED, NULL, &img_helmet__grey_, NULL);
-                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_PRESSED, NULL, &img_helmet, NULL);
-                            lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_RELEASED, NULL, &img_helmet, NULL);
+                            lv_imgbtn_set_src(obj, LV_IMGBTN_STATE_PRESSED, NULL, &img_helmet__grey_, NULL);
+                            lv_obj_add_flag(obj, LV_OBJ_FLAG_CHECKABLE);
                         }
                         {
                             // home_select_text
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.home_select_text = obj;
-                            lv_obj_set_pos(obj, 278, 226);
+                            lv_obj_set_pos(obj, 289, 278);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                             lv_obj_set_style_text_font(obj, &ui_font_30, LV_PART_MAIN | LV_STATE_DEFAULT);
-                            lv_label_set_text(obj, "请拿取需要的劳防用品。");
+                            lv_label_set_text(obj, "请拿取需要的劳防用品。\n(请点击图标以打开柜门)");
+                        }
+                        {
+                            // grid_1_text
+                            lv_obj_t *obj = lv_label_create(parent_obj);
+                            objects.grid_1_text = obj;
+                            lv_obj_set_pos(obj, 18, 59);
+                            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                            lv_obj_set_style_text_font(obj, &ui_font_30, LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_label_set_text(obj, "1\n号\n柜");
+                        }
+                        {
+                            // grid_2_text
+                            lv_obj_t *obj = lv_label_create(parent_obj);
+                            objects.grid_2_text = obj;
+                            lv_obj_set_pos(obj, 18, 266);
+                            lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                            lv_obj_set_style_text_font(obj, &ui_font_30, LV_PART_MAIN | LV_STATE_DEFAULT);
+                            lv_label_set_text(obj, "43\n号\n柜");
                         }
                         {
                             // home_select_ok
                             lv_obj_t *obj = lv_btn_create(parent_obj);
                             objects.home_select_ok = obj;
-                            lv_obj_set_pos(obj, 614, 289);
+                            lv_obj_set_pos(obj, 630, 266);
                             lv_obj_set_size(obj, 127, 85);
                             {
                                 lv_obj_t *parent_obj = obj;
@@ -232,7 +250,7 @@ void create_screen_main() {
                                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                                     lv_obj_set_style_align(obj, LV_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
                                     lv_obj_set_style_text_font(obj, &ui_font_30, LV_PART_MAIN | LV_STATE_DEFAULT);
-                                    lv_label_set_text(obj, "确定");
+                                    lv_label_set_text(obj, "完成");
                                 }
                             }
                         }
@@ -1141,7 +1159,7 @@ void tick_screen_manage() {
 
 
 static const char *screen_names[] = { "Main", "manage" };
-static const char *object_names[] = { "main", "manage", "home_home_maintain", "obj0", "tabview", "home_home", "home_home_use", "home_home_return", "home_idcheck", "home_idcheck_ok", "home_idcheck_keyboard", "home_idcheck_textarea", "home_select", "home_select_btn0", "home_select_btn1", "home_select_btn2", "home_select_btn3", "home_select_text", "home_select_ok", "home_final", "home_final_text", "manage_btn_37", "manage_btn_38", "manage_btn_39", "manage_btn_40", "manage_btn_41", "manage_btn_42", "manage_btn_43", "manage_btn_44", "manage_btn_45", "manage_btn_46", "manage_btn_47", "manage_btn_48", "manage_btn_25", "manage_btn_26", "manage_btn_27", "manage_btn_28", "manage_btn_29", "manage_btn_30", "manage_btn_31", "manage_btn_32", "manage_btn_33", "manage_btn_34", "manage_btn_35", "manage_btn_36", "manage_btn_13", "manage_btn_14", "manage_btn_15", "manage_btn_16", "manage_btn_17", "manage_btn_18", "manage_btn_19", "manage_btn_20", "manage_btn_21", "manage_btn_22", "manage_btn_23", "manage_btn_24", "manage_btn_1", "manage_btn_2", "manage_btn_3", "manage_btn_4", "manage_btn_5", "manage_btn_6", "manage_btn_7", "manage_btn_8", "manage_btn_9", "manage_btn_10", "manage_btn_11", "manage_btn_12", "manage_btn_0" };
+static const char *object_names[] = { "main", "manage", "home_home_maintain", "obj0", "tabview", "home_home", "home_home_use", "home_home_return", "home_idcheck", "home_idcheck_ok", "home_idcheck_keyboard", "home_idcheck_textarea", "home_select", "home_select_btn0", "home_select_btn1", "home_select_btn2", "home_select_btn3", "home_select_text", "grid_1_text", "grid_2_text", "home_select_ok", "home_final", "home_final_text", "manage_btn_37", "manage_btn_38", "manage_btn_39", "manage_btn_40", "manage_btn_41", "manage_btn_42", "manage_btn_43", "manage_btn_44", "manage_btn_45", "manage_btn_46", "manage_btn_47", "manage_btn_48", "manage_btn_25", "manage_btn_26", "manage_btn_27", "manage_btn_28", "manage_btn_29", "manage_btn_30", "manage_btn_31", "manage_btn_32", "manage_btn_33", "manage_btn_34", "manage_btn_35", "manage_btn_36", "manage_btn_13", "manage_btn_14", "manage_btn_15", "manage_btn_16", "manage_btn_17", "manage_btn_18", "manage_btn_19", "manage_btn_20", "manage_btn_21", "manage_btn_22", "manage_btn_23", "manage_btn_24", "manage_btn_1", "manage_btn_2", "manage_btn_3", "manage_btn_4", "manage_btn_5", "manage_btn_6", "manage_btn_7", "manage_btn_8", "manage_btn_9", "manage_btn_10", "manage_btn_11", "manage_btn_12", "manage_btn_0" };
 
 
 typedef void (*tick_screen_func_t)();

@@ -26,6 +26,7 @@
 #include "js.h"
 #include "openlock.h"
 #include "rfid.h"
+#include "database.h"
 
 
 #endif /*MAIN_H*/

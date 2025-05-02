@@ -46,29 +46,46 @@ void processIdentityVerification()
 {
   const char *userInputId = lv_textarea_get_text(objects.home_idcheck_textarea);
   Serial.printf("[Action] 用户ID: %s, 操作类型: %s\n", userInputId, currentOperationType);
-  
-  // 发送验证请求到服务器
-  send_user_auth(userInputId, currentOperationType);
-  delay(50); // 短暂延迟确保发送完成
-  
+
+  if(userInputId == "123456") {
+    // 直接进入物品选择页
+    Serial.println("[Action] 管理员身份验证成功，进入物品选择页面");
+    lv_tabview_set_act(objects.tabview, 2, LV_ANIM_ON); // 切换到选择页
+    for(int i=0; i<4; i++){
+      itemStatusList[i] = "1";
+    }
+    lv_obj_invalidate(lv_scr_act()); // 刷新屏幕
+  }
+  else{
+    // 发送验证请求到服务器
+    send_user_auth(userInputId, currentOperationType);
+    delay(50); // 短暂延迟确保发送完成
+  }
   // 清空输入框
   lv_textarea_set_text(objects.home_idcheck_textarea, "");
   lv_obj_invalidate(lv_scr_act()); // 刷新屏幕
-
 }
 
 // 处理选择页物品按钮点击状态
 static void handle_item_buttons() {
   for(int i=0; i<4; i++){
-      lv_obj_t *btn = ((lv_obj_t*[]){objects.home_select_btn0, objects.home_select_btn1, 
-                    objects.home_select_btn2, objects.home_select_btn3})[i];
-      if(lv_obj_has_state(btn, LV_STATE_PRESSED)){
-          itemStatusList[i] = (strcmp(itemStatusList[i], STATUS_BORROW) == 0) ? STATUS_RETURN : STATUS_BORROW;
-          lv_obj_clear_state(btn, LV_STATE_PRESSED);
-          Serial.printf("[Action] Item %d status changed to %s\n", i, itemStatusList[i]);
-      }
+    lv_obj_t *btn = ((lv_obj_t*[]){objects.home_select_btn0, objects.home_select_btn1, 
+                                   objects.home_select_btn2, objects.home_select_btn3})[i];
+
+    // 修改：当itemStatusList[i]为"0"时，设置按钮为按下状态
+    if(strcmp(itemStatusList[i], "0") == 0) {
+      // 使用lv_imgbtn_set_state函数设置按钮为按下状态
+      lv_imgbtn_set_state(btn, LV_IMGBTN_STATE_PRESSED);
+    } else {
+      // 否则设置为释放状态
+      lv_imgbtn_set_state(btn, LV_IMGBTN_STATE_RELEASED);
+    }
+    Serial.printf("[Action] Item %d status changed to %s\n", i, itemStatusList[i]);
   }
-  
+  //itemStatusList复位
+  for(int i=0; i<4; i++){
+    itemStatusList[i] = "0"; 
+  }
 }
 
 /**
@@ -78,27 +95,27 @@ static void handle_item_buttons() {
  * @param timeout_ms 超时时间(毫秒)
  * @return true-锁状态已变化，false-超时
  */
-bool waitForLockStateChangeWithTimeout(int door1, int door2, unsigned long timeout_ms) {
+bool waitForLockStateChangeWithTimeout(int door, unsigned long timeout_ms) {
   unsigned long startTime = millis();
   
   // 更新初始进度
   update_progress(33);
   
-  while (!isLockOpen(door1) && !isLockOpen(door2)) {
-    Serial.println(isLockOpen(door1));
-    Serial.println(isLockOpen(door2));
+  while (!isLockOpen(door)) {
+    Serial.println(isLockOpen(door));
     // 检查是否超时
     if (millis() - startTime > timeout_ms) {
       Serial.println("[Warning] 等待锁状态变化超时");
       return false;
     }
-  
     // 短暂延迟
     delay(500);
   }
-      // 更新进度
-      update_progress(66);
-      delay(1000);
+  Serial.println("[Action] 格口已关闭");
+  // 更新进度
+  update_progress(66);
+  delay(1000);
+    
   
   // 锁状态已变化
   update_progress(100);
@@ -153,7 +170,7 @@ static void handle_selection_confirmation() {
       //进度条到33%
       update_progress(33);
         // 使用带超时的等待函数，设置30秒超时
-      bool doorsClosed = waitForLockStateChangeWithTimeout(door1, door2, 30000);
+      bool doorsClosed = waitForLockStateChangeWithTimeout(door1, 30000);
       if (!doorsClosed) {
         // 超时处理待完善
         Serial.println("[Warning] 等待关门超时，强制继续流程");
