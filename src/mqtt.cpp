@@ -1,14 +1,14 @@
 #include <main.h>
-#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
+//#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 
 // WiFi客户端实例
 WiFiClient espClient;
 // MQTT客户端实例，使用WiFi客户端
 PubSubClient client(espClient);
 
-// // WiFi连接配置
-// const char *ssid = "306";           // WiFi名称
-// const char *password = "123456789"; // WiFi密码
+// WiFi连接配置
+const char *ssid = "306";           // WiFi名称
+const char *password = "123456789"; // WiFi密码
 
 // MQTT服务器配置
 const char *mqtt_broker = "39.98.181.107"; // MQTT服务器地址
@@ -340,31 +340,39 @@ void callback(char* topic, byte* payload, unsigned int length) {
 // 初始化MQTT连接（程序启动时调用一次）
 // 使用示例：mqtt_initialize();
 void mqtt_initialize() {
-    // WiFiManager本地初始化，完成后无需保留实例
-    WiFiManager wm;
+    // // WiFiManager本地初始化，完成后无需保留实例
+    // WiFiManager wm;
 
-    // 重置设置 - 擦除存储的凭证用于测试
-    // 这些凭证由ESP库存储
-    //wm.resetSettings();
+    // // 重置设置 - 擦除存储的凭证用于测试
+    // // 这些凭证由ESP库存储
+    // //wm.resetSettings();
 
-    // 自动使用保存的凭证连接
-    // 如果连接失败，将启动指定名称的接入点("AutoConnectAP")
-    // 如果名称为空将自动生成SSID，如果密码为空则为匿名AP(wm.autoConnect())
-    // 然后进入阻塞循环等待配置并返回成功结果
+    // // 自动使用保存的凭证连接
+    // // 如果连接失败，将启动指定名称的接入点("AutoConnectAP")
+    // // 如果名称为空将自动生成SSID，如果密码为空则为匿名AP(wm.autoConnect())
+    // // 然后进入阻塞循环等待配置并返回成功结果
 
-    bool res;
-    // res = wm.autoConnect(); // 使用芯片ID自动生成AP名称
-    // res = wm.autoConnect("AutoConnectAP"); // 匿名AP
-    res = wm.autoConnect("AutoConnectAP","password"); // 密码保护的AP
+    // bool res;
+    // // res = wm.autoConnect(); // 使用芯片ID自动生成AP名称
+    // // res = wm.autoConnect("AutoConnectAP"); // 匿名AP
+    // res = wm.autoConnect("AutoConnectAP","password"); // 密码保护的AP
 
-    if(!res) {
-        Serial.println("连接失败");
-        // ESP.restart(); // 取消注释可在失败时重启设备
-    } 
-    else {
-        // 连接成功时执行此处代码
-        Serial.println("连接成功!");
-    }
+    // if(!res) {
+    //     Serial.println("连接失败");
+    //     // ESP.restart(); // 取消注释可在失败时重启设备
+    // } 
+    // else {
+    //     // 连接成功时执行此处代码
+    //     Serial.println("连接成功!");
+    // }
+  // 初始化WiFi
+  // Connecting to a WiFi network
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.println("Connecting to WiFi..");
+  }
+  Serial.println("Connected to the Wi-Fi network");
   
   client.setServer(mqtt_broker, mqtt_port);
   client.setCallback(callback);
