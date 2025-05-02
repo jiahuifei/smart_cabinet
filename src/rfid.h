@@ -4,7 +4,7 @@
 #include <main.h>
 
 void rfid_init();
-void rfid_loop();
+bool rfid_loop(String epc_id,uint8_t ant);
 String read_tag_re();
 bool cmd_stop_inventory();
 bool cmd_inventory_epc();

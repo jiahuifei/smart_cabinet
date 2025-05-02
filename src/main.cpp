@@ -12,6 +12,7 @@ void setup()
   mqtt_init();
   rs485_init();
   rfid_init();
+  ItemDatabase::init();
   
   static esp_lcd_panel_handle_t panel_handle = NULL; // 声明 LCD 面板
   static esp_lcd_touch_handle_t tp_handle = NULL;    // 声明触摸面板

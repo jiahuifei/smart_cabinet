@@ -340,17 +340,24 @@ void rfid_init() {
   }
 }
 
-void rfid_loop() {
+bool rfid_loop(String epc_id,uint8_t ant) {
   if(rfid_client.connected()){
     // 开始盘点标签
-    if(cmd_inventory_epc()){
+    if(cmd_read_tag(ant)){
       String epc;
-      // 持续读取直到获取到标签
+      unsigned long startTime = millis(); // 记录开始时间
+      const unsigned long timeout = 5000; // 设置超时时间为10秒
+
+      // 持续读取直到获取到标签或超时
       while(true){
         epc = read_tag_re();
-        if(epc != "" && epc.startsWith("03")){  // 读取到有效标签且前两位是01
+        if(epc != "" && epc.startsWith(epc_id)){  // 读取到有效标签且前两位是01
           Serial.println("读取到有效标签EPC: " + epc);
           break;  // 跳出循环
+        }
+        if (millis() - startTime > timeout) { // 检查是否超时
+          Serial.println("读取标签超时");
+          return false; // 返回失败状态
         }
         delay(500);  // 短暂延迟避免CPU占用过高
       }
@@ -359,7 +366,12 @@ void rfid_loop() {
       {
         delay(1000);
       }
+      return true;
     }
+    return false; // 如果cmd_read_tag失败，返回false
   }
-  while(true);
+  else{
+    Serial.println("连接读写器失败");
+    return false;
+  }
 }
