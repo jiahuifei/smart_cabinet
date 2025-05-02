@@ -52,7 +52,7 @@ static void auth_timeout_callback(lv_timer_t * timer) {
   Serial.println("[超时] 认证超时");
   
   // 创建超时提示弹窗
-  static const char* btns[] = {"关闭", "", ""};
+  static const char* btns[] = {"close", "", ""};
   error_msgbox = lv_msgbox_create(lv_scr_act(), "认证超时", "服务器响应超时，请稍后重试", btns, false);
   lv_obj_center(error_msgbox);
   
@@ -473,8 +473,32 @@ void super_loop()
 {
   // 检查当前是否在管理页面
   if (lv_scr_act() == objects.manage) {
-    // 管理页面逻辑保持不变
-    // ...现有代码...
+    Serial.println("当前在管理页面");
+    // 定义管理按钮数组
+    lv_obj_t* manage_buttons[] = {
+        objects.manage_btn_0, objects.manage_btn_1, objects.manage_btn_2, objects.manage_btn_3,
+        objects.manage_btn_4, objects.manage_btn_5, objects.manage_btn_6, objects.manage_btn_7,
+        objects.manage_btn_8, objects.manage_btn_9, objects.manage_btn_10, objects.manage_btn_11,
+        objects.manage_btn_12, objects.manage_btn_13, objects.manage_btn_14, objects.manage_btn_15,
+        objects.manage_btn_16, objects.manage_btn_17, objects.manage_btn_18, objects.manage_btn_19,
+        objects.manage_btn_20, objects.manage_btn_21, objects.manage_btn_22, objects.manage_btn_23,
+        objects.manage_btn_24, objects.manage_btn_25, objects.manage_btn_26, objects.manage_btn_27,
+        objects.manage_btn_28, objects.manage_btn_29, objects.manage_btn_30, objects.manage_btn_31,
+        objects.manage_btn_32, objects.manage_btn_33, objects.manage_btn_34, objects.manage_btn_35,
+        objects.manage_btn_36, objects.manage_btn_37, objects.manage_btn_38, objects.manage_btn_39,
+        objects.manage_btn_40, objects.manage_btn_41, objects.manage_btn_42, objects.manage_btn_43,
+        objects.manage_btn_44, objects.manage_btn_45, objects.manage_btn_46, objects.manage_btn_47,
+        objects.manage_btn_48
+    };
+    
+    // 遍历所有管理按钮(0-48)
+    for(int i = 0; i <= 48; i++) {
+        if(manage_buttons[i] && lv_obj_has_state(manage_buttons[i], LV_STATE_PRESSED)) {
+            directOpenLockById(i);  // 按钮编号直接对应锁ID
+            Serial.printf("[Action] 按钮 %d 按下，打开锁 %d\n", i, i);
+            break;  // 一次只处理一个按钮
+        }
+    }
   }
     
   // 主页（Tab 0）按钮处理
@@ -516,8 +540,43 @@ void super_loop()
 // 超时处理回调函数
 void timeout_callback_1(lv_timer_t * timer)
 {
-  // 现有代码保持不变
-  // ...
+  Serial.println("[Timeout] Timer callback triggered");
+
+  // 处理定时器自动销毁
+  if(timer->user_data != NULL){
+    Serial.println("[Timeout] Cleaning up timer resources");
+    lv_timer_del(timer);
+    operationTimeoutTimer = NULL;
+    return;
+  }
+
+  // 只在非主页时处理超时
+  if(lv_tabview_get_tab_act(objects.tabview) == 0) {
+    return;
+  }
+  
+  // 统一超时处理
+  if (lvgl_port_lock(-1)) {
+    Serial.println("[Timeout] Resetting system state");
+    
+    // 重置UI状态
+    lv_tabview_set_act(objects.tabview, 0, LV_ANIM_ON);
+    lv_textarea_set_text(objects.home_idcheck_textarea, "");
+    
+    // 重置业务状态
+    currentOperationType = STATUS_NULL;
+    for (int i = 0; i < 4; i++) {
+      itemStatusList[i] = STATUS_BORROW;
+    }
+    
+    // // 更新界面
+    // update_select_page(itemStatusList);
+    
+    lvgl_port_unlock();
+    Serial.println("[Timeout] System state reset completed");
+  } else {
+    Serial.println("[Error] Failed to acquire LVGL lock in timeout handler");
+  }
 }
 
 
