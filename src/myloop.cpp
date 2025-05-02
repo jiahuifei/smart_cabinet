@@ -1,12 +1,6 @@
 #include <main.h>
 
-/* 
- * 系统操作状态枚举
- * STATUS_NULL - 初始空闲状态
- * STATUS_BORROW - 物品领用状态
- * STATUS_RETURN - 物品归还状态
- * STATUS_MAINTAIN - 设备维护状态
- */
+
 #define STATUS_NULL "NULL"
 #define STATUS_BORROW "0"
 #define STATUS_RETURN "1"
@@ -14,7 +8,7 @@
 
 /* 系统全局状态变量 */
 const char *currentOperationType = STATUS_NULL;  // 当前执行的操作类型
-const char *itemStatusList[4] = {STATUS_BORROW, STATUS_BORROW, STATUS_BORROW, STATUS_BORROW}; // 四个物品的状态数组
+
 
 /* 流程控制变量 */
 static int currentWorkflowStage = 0;  // 当前工作流阶段

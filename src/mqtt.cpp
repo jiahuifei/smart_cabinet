@@ -1,118 +1,65 @@
 #include <main.h>
-//#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
+// WiFi
+const char *ssid = "306"; // Enter your Wi-Fi name
+const char *password = "123456789";  // Enter Wi-Fi password
 
-// WiFi客户端实例
-WiFiClient espClient;
-// MQTT客户端实例，使用WiFi客户端
-PubSubClient client(espClient);
+// MQTT Broker
+const char *mqtt_broker = "39.98.181.107";
+const char *topic = "/device/CP_1/status";
+const char *mqtt_username = "emqx";
+const char *mqtt_password = "public";
+const int mqtt_port = 1883;
 
-// WiFi连接配置
-const char *ssid = "306";           // WiFi名称
-const char *password = "123456789"; // WiFi密码
+WiFiClient mqtt_client;
+PubSubClient client(mqtt_client);
 
-// MQTT服务器配置
-const char *mqtt_broker = "39.98.181.107"; // MQTT服务器地址
-const char *topic = "smart_cabinet/01";     // MQTT主题
-const char *mqtt_username = "emqx";         // MQTT用户名
-const char *mqtt_password = "public";       // MQTT密码
-const int mqtt_port = 1883;                 // MQTT服务器端口
 
-// 系统状态标志
-bool user_id_received = false;      // 用户ID接收状态标志
-bool item_states_received = false;  // 物品状态接收标志
 
-// 设备配置常量
 #define DEVICE_ID "CP_1"      // 设备唯一标识符
-#define FIRMWARE_VER "v2.1.5" // 固件版本号
-#define DOOR_COUNT 50         // 柜门总数量
+// 物品状态列表
+const char* itemStatusList[4] = {"0", "0", "0", "0"};  // 初始化为0
+// 系统状态标志
+bool item_states_received = false;  // 物品状态接收标志
+bool user_id_received = false;  // 用户ID接收标志
 
-// 柜门状态枚举
-enum DoorStatus {
-    FREE,     // 空闲状态
-    OCCUPIED, // 占用状态
-    FAULT     // 故障状态
-};
+void callback(char *topic, byte *payload, unsigned int length);
+void send_heartbeat();
 
-// 操作结果枚举
-enum OpResult {
-    SUCCESS,  // 操作成功
-    FAILURE   // 操作失败
-};
-
-// 门控制回调函数类型定义
-typedef void (*DoorControlCallback)(uint8_t door_num, uint8_t action, uint8_t duration);
-
-DoorControlCallback door_control_cb = nullptr;   // 门控制回调函数指针
-
-// MQTT消息发布函数：向指定主题发送消息
-void mqtt_publish(char *message){
-  client.publish(topic, message);
+void mqtt_init() {
+    // Set software serial baud to 115200;
+    Serial.begin(115200);
+    // Connecting to a WiFi network
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.println("Connecting to WiFi..");
+    }
+    Serial.println("Connected to the Wi-Fi network");
+    //connecting to a mqtt broker
+    client.setServer(mqtt_broker, mqtt_port);
+    client.setCallback(callback);
+    while (!client.connected()) {
+        String client_id = "esp32-client-";
+        client_id += String(WiFi.macAddress());
+        Serial.printf("The client %s connects to the public MQTT broker\n", client_id.c_str());
+        if (client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
+            Serial.println("Public EMQX MQTT broker connected");
+        } else {
+            Serial.print("failed with state ");
+            Serial.print(client.state());
+            delay(2000);
+        }
+    }
+    // Publish and subscribe
+    client.publish(topic, "Hi, I'm ESP32 ^^");
+    client.subscribe(topic);
 }
 
-// 发送MQTT消息（需要按钮触发）
-// 参数：button-LVGL按钮对象，message-要发送的消息
-// 使用示例：button_check_send(my_button, "hello");
-void button_check_send(lv_obj_t *button, char *message){
-   // 全局或静态变量记录上一次状态
-  static bool last_button_state = false;
-  static bool current_state= false;
-  // 获取当前状态
-  current_state = lv_obj_has_state(button, LV_STATE_PRESSED);
 
-  // 检查 mqtt_button 是否处于按下状态
-  if (current_state != last_button_state && current_state) {
-    last_button_state = current_state;
-    printf("MQTT Button is pressed!\n");
-    mqtt_publish(message);
-    //delay(50);
-  } else {
-    printf("MQTT Button is released.\n");
-    last_button_state = current_state;
-  }
-}
 
-// 按钮消息框显示函数：检测按钮状态并显示消息框
-// @param button: LVGL按钮对象
-// @param btns: 消息框按钮文本数组
-// @param msgtitle: 消息框标题
-// @param msgtext: 消息框内容
-void button_check_msgbox(
-  lv_obj_t *button,
-  const char* btns[],
-  const char* msgtitle,
-  const char* msgtext){
-   // 全局或静态变量记录上一次状态
-  static bool last_button_state = false;
-  static bool current_state= false;
-  // 获取当前状态
-  current_state = lv_obj_has_state(button, LV_STATE_PRESSED);
-
-  // 检查 mqtt_button 是否处于按下状态
-  if (current_state != last_button_state && current_state) {
-    last_button_state = current_state;
-    printf("MQTT Button is pressed!\n");
-
-    lv_obj_t* lv_msgbox = lv_msgbox_create(NULL,msgtitle,msgtext, btns,true);
-    lv_obj_center(lv_msgbox);
-
-    //delay(50);
-  } else {
-    printf("MQTT Button is released.\n");
-    last_button_state = current_state;
-  }
-}
-
-// 设备注册（自动调用，无需手动触发）
-void send_device_register() {
-  JsonDocument doc;
-  doc["msg_id"] = "REG_" + String(millis());
-  doc["device_id"] = DEVICE_ID;
-  doc["firmware"] = FIRMWARE_VER;
-  doc["door_count"] = DOOR_COUNT;
-  
-  char buffer[128];
-  serializeJson(doc, buffer);
-  client.publish("/device/register", buffer);
+void mqtt_loop() {
+    client.loop();
+    send_heartbeat();
 }
 
 // 心跳包发送函数：定期向服务器发送设备状态信息
@@ -143,326 +90,86 @@ void send_heartbeat() {
   last_send = millis();
 }
 
-// 门状态反馈（门操作后调用）
-// 参数：door_num-门号，result-操作结果，item_type-物品类型
-// 使用示例：send_door_feedback(1, SUCCESS, 2);
-void send_door_feedback(uint8_t door_num, OpResult result, uint8_t item_type) {
-  JsonDocument doc;
-  doc["command_id"] = "CMD_" + String(millis());
-  doc["result"] = result == SUCCESS ? "success" : "fail";
-  doc["door_number"] = door_num;
-  doc["actual_item"] = item_type;
-  doc["timestamp"] = millis();
-
-  char buffer[128];
-  serializeJson(doc, buffer);
-  client.publish(String("/device/" DEVICE_ID "/door_feedback").c_str(), buffer);
-}
-
-// 门状态上报（定时自动调用，可手动触发）
-// 参数：door_num-门号，status-门状态，item_type-物品类型
-// 使用示例：report_door_status(1, OCCUPIED, 3);
-void report_door_status(uint8_t door_num, DoorStatus status, uint8_t item_type) {
-  JsonDocument doc;
-  doc["door"] = door_num;
-  doc["status"] = status == FREE ? "free" : 
-                 status == OCCUPIED ? "occupied" : "fault";
-  doc["item_type"] = item_type;
-  doc["timestamp"] = millis();
-
-  auto sensors = doc["sensors"].to<JsonArray>();
-  sensors.add(1); // 模拟RFID数据
-  sensors.add(0);
-  sensors.add(1);
-  sensors.add(0);
-
-  char buffer[256];
-  serializeJson(doc, buffer);
-  client.publish(String("/device/" DEVICE_ID "/status").c_str(), buffer);
-}
-
-// 实际门控制（收到服务器指令时调用）
-// 参数：door-门号，action-操作类型，duration-持续时间
-// 返回：操作是否成功
-// 使用示例：bool success = control_door(1, "open", 5);
-// bool control_door(uint8_t door, String action, uint8_t duration) {
-//   if (door >= DOOR_COUNT) {
-//       Serial.printf("无效门编号: %d\n", door);
-//       return false;
-//   }
-
-//   char rsMsg[32];
-//   bool result = false;
-//   // 门控硬件寻址算法
-//   // 板地址计算：每块控制板管理24个锁，通过整除运算确定板号
-//   // 锁地址计算：取余运算确定板内具体锁编号
-//   // 示例：door=25 → boardNo=2, lockNo=2
-//   uint8_t boardNo = 1 + door / 24;
-//   uint8_t lockNo = 1 + door % 24;
-  
-//   // 根据动作类型调用硬件接口
-//   if (action == "open") {
-//       result = openLock(boardNo, lockNo, rsMsg);
-//   } 
-//   else if (action == "open_all") {
-//       result = openAllLock(boardNo, rsMsg);
-//   }
-//   else if (action == "power_on") {
-//       result = openPower(boardNo, lockNo, rsMsg);
-//   }
-//   else if (action == "power_off") {
-//       result = closePower(boardNo, lockNo, rsMsg);
-//   }
-  
-//   Serial.printf("门控制结果 [板%d 锁%d]: %s\n", boardNo, lockNo, rsMsg);
-//   return result;
-// }
-
-// MQTT消息回调函数：处理接收到的MQTT消息
-// @param topic: 消息主题
-// @param payload: 消息内容
-// @param length: 消息长度
-// MQTT消息回调（自动触发，无需手动调用）
-void callback(char* topic, byte* payload, unsigned int length) {
+void callback(char *topic, byte *payload, unsigned int length) {
   String message;
-  for (int i=0; i<length; i++) message += (char)payload[i];
-  
-  Serial.print("收到MQTT消息，主题: ");
-  Serial.println(topic);
-  Serial.print("消息内容: ");
-  Serial.println(message);
-
+  for (int i = 0; i < length; i++) {
+      message += (char) payload[i];
+  }
+  Serial.println("Message arrived in topic: ");
+  Serial.print(topic);
+  Serial.println("Message:" + message);
+  Serial.println("-----------------------");
   // 创建JSON文档对象
   JsonDocument doc;
   DeserializationError error = deserializeJson(doc, message);
-  
   if (error) {
-      Serial.print("JSON解析失败: ");
+      Serial.print(F("deserializeJson() failed: "));
       Serial.println(error.f_str());
       return;
   }
-
-  // 构建预期的主题字符串
-  String expected_control_topic = String("/server/") + String(DEVICE_ID) + String("/door_control");
-  String expected_auth_topic = String("/server/") + String(DEVICE_ID) + String("/auth_response");
-  
-  Serial.printf("预期控制主题: %s\n", expected_control_topic.c_str());
-  Serial.printf("预期认证主题: %s\n", expected_auth_topic.c_str());
-  Serial.printf("实际接收主题: %s\n", topic);
-
-  // // 门控制指令处理
-  // if(String(topic) == String("/server/" DEVICE_ID "/door_control")) {
-  //     uint8_t door = doc["door_number"];
-  //     String action = doc["action"].as<String>();
-  //     uint8_t duration = doc["duration"];  // 单位：秒
-      
-  //     // 添加操作延时
-  //     if (duration > 0) {
-  //         unsigned long start = millis();
-  //         while (millis() - start < duration * 1000) {
-  //             control_door(door, action, duration);
-  //         }
-  //     } else {
-  //         control_door(door, action, duration);
-  //     }
-  // }
-  
-  // 用户认证响应处理部分
   if(String(topic) == String("/server/CP_1/auth_response")) {
-    Serial.println("2");
-    // 提取关联ID用于追踪请求
+    Serial.println("收到认证响应");
     const char* correlation_id = doc["correlation_id"]; 
-    Serial.printf("处理认证响应: %s\n", correlation_id);
+    Serial.printf("用户ID: %s\n", correlation_id);
     
-    if(doc["status"] == 200) {
-      // 解析用户信息
-      JsonObject user_info = doc["user_info"];
-      const char* user_id = user_info["user_id"];
-      const char* reservation_id = user_info["reservation_id"];
-      
+    // 检查状态字段
+    const char* status = doc["status"];
+    if(strcmp(status, "null_user") == 0){
+      user_id_received = false;
+      Serial.println("用户不存在");
+    }
+    else if(strcmp(status, "use") == 0) {
+      Serial.println("领用操作");
+      user_id_received = true;
       // 解析物品状态数组
-      JsonArray item_states = user_info["item_states"];
-      for (int i = 0; i < item_states.size() && i < 4; i++) {
-      itemStatusList[i] = item_states[i] == 0 ? "0" : "1";
+      if(doc["item_states"].is<JsonArray>()) {
+        JsonArray item_states = doc["item_states"].as<JsonArray>();
+        for (int i = 0; i < item_states.size() && i < 4; i++) {
+            itemStatusList[i] = item_states[i] == 0 ? "0" : "1";
+        }
+        item_states_received = true;
+        Serial.println("物品状态已更新");
+      } else {
+          Serial.println("警告: 缺少item_states字段");
       }
-      item_states_received = true;
-      Serial.print("3");
-      
-      // 解析门分配信息
-      JsonObject door_assignment = doc["door_assignment"];
-      uint8_t primary_door = door_assignment["primary"];
-      uint8_t secondary_door = door_assignment["secondary"].isNull() ? 0xFF : door_assignment["secondary"]; // 修复containsKey
-      
-      // 更新界面并记录有效期
-      // 修复参数类型匹配问题
-      update_ui(
-      user_id,
-      reservation_id,
-      primary_door,
-      secondary_door,
-      doc["valid_until"]
-      );
+    }
+    else if(strcmp(status, "return") == 0) {
+      Serial.println("归还操作");
+      user_id_received = true;
+        // 解析物品状态数组
+        if(doc.containsKey("item_states")) {
+          JsonArray item_states = doc["item_states"];
+          for (int i = 0; i < item_states.size() && i < 4; i++) {
+              itemStatusList[i] = item_states[i] == 0 ? "0" : "1";
+          }
+          item_states_received = true;
+          Serial.println("物品状态已更新");
+      } else {
+          Serial.println("警告: 缺少item_states字段");
+      }
     } 
     else {
-      // 修复三元运算符类型不匹配问题
-      const char* error_detail = doc["error_detail"].isNull() ? "未知错误" : doc["error_detail"].as<const char*>();
-      // 使用单参数版本的handle_auth_error
-      handle_auth_error(doc["error_code"]);
+        Serial.printf("状态异常: %s\n", status);
     }
   }
-  
-  // JSON处理逻辑
-  else {
-    //   // 原始user_id和item_states处理逻辑
-    //   if (doc["user_id"].is<const char*>()) {
-    //       const char* user_id = doc["user_id"];
-    //       Serial.print("user_id: ");
-    //       Serial.println(user_id);
-    //       user_id_received = true;
-    //   }
-
-    //   if (doc["item_states"].is<JsonArray>()) {
-    //     JsonArray item_states = doc["item_states"];
-    //     for (int i = 0; i < item_states.size() && i < 4; i++) {  // 限制为4个元素
-    //         int status = item_states[i];
-    //         // 修改为使用已定义的数组
-    //         itemStatusList[i] = status == 0 ? "0" : "1";
-    //     }
-    //     item_states_received = true;
-    //     Serial.print("item_states: ");
-    //     for (int i = 0; i < 4; i++) {
-    //         Serial.print(itemStatusList[i]);
-    //     }
-    // }
-  }
-}
-
-// 初始化MQTT连接（程序启动时调用一次）
-// 使用示例：mqtt_initialize();
-void mqtt_initialize() {
-    // // WiFiManager本地初始化，完成后无需保留实例
-    // WiFiManager wm;
-
-    // // 重置设置 - 擦除存储的凭证用于测试
-    // // 这些凭证由ESP库存储
-    // //wm.resetSettings();
-
-    // // 自动使用保存的凭证连接
-    // // 如果连接失败，将启动指定名称的接入点("AutoConnectAP")
-    // // 如果名称为空将自动生成SSID，如果密码为空则为匿名AP(wm.autoConnect())
-    // // 然后进入阻塞循环等待配置并返回成功结果
-
-    // bool res;
-    // // res = wm.autoConnect(); // 使用芯片ID自动生成AP名称
-    // // res = wm.autoConnect("AutoConnectAP"); // 匿名AP
-    // res = wm.autoConnect("AutoConnectAP","password"); // 密码保护的AP
-
-    // if(!res) {
-    //     Serial.println("连接失败");
-    //     // ESP.restart(); // 取消注释可在失败时重启设备
-    // } 
-    // else {
-    //     // 连接成功时执行此处代码
-    //     Serial.println("连接成功!");
-    // }
-  // 初始化WiFi
-  // Connecting to a WiFi network
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.println("Connecting to WiFi..");
-  }
-  Serial.println("Connected to the Wi-Fi network");
-  
-  client.setServer(mqtt_broker, mqtt_port);
-  client.setCallback(callback);
-  
-  while (!client.connected()) {
-    String client_id = "esp8266-client-" + String(WiFi.macAddress());
-    if (client.connect(client_id.c_str(), mqtt_username, mqtt_password)) {
-
-      Serial.println("Connected to MQTT broker");
-    }
-    else {
-      Serial.printf("连接失败，错误码: %d\n", client.state());
-      delay(500);
-      //retry_count++;
-  }
-  }
-
-// 更新后的JSON处理
-JsonDocument doc;
-JsonObject network = doc["network"].to<JsonObject>();
-JsonArray sensors = doc["sensors"].to<JsonArray>();
-
-
-
-send_device_register();
-
-  // 确保订阅主题正确
-  String auth_topic = "/server/" DEVICE_ID "/auth_response";
-  String control_topic = "/server/" DEVICE_ID "/door_control";
-  Serial.printf("订阅主题: %s\n", auth_topic.c_str());
-  client.subscribe(auth_topic.c_str());
-  Serial.printf("订阅主题: %s\n", control_topic.c_str());
-  client.subscribe(control_topic.c_str());
-
-Serial.println("Connected to MQTT broker");
-
-
-}
-
-// 主循环处理（需要在Arduino loop中持续调用）
-// 使用示例：在loop() { mqttloop(); }
-void mqttloop() {
-  client.loop();
-  send_heartbeat(); // 定期发送心跳
-  // static unsigned long last_report = 0;
-  // if(millis() - last_report > 5000) { // 5秒上报
-  //     report_door_status(0, FREE, 0); // 添加默认参数 
-  //     last_report = millis();
-  // }
-
-}
-
-// UI更新函数（认证成功时自动调用）
-// 参数：user_id-用户ID，reservation_id-预定ID，primary_door-主柜门，secondary_door-备用柜门，valid_until-有效期
-void update_ui(const char* user_id, const char* reservation_id, uint8_t primary_door, uint8_t secondary_door, const char* valid_until) {
-  // 实现具体的UI更新逻辑
-  Serial.printf("更新用户界面: 用户ID=%s, 预定号=%s\n主门=%d, 备门=%d, 有效期=%s\n", 
-               user_id, reservation_id, primary_door, secondary_door, valid_until);
-}
-
-// 认证错误处理（添加错误详情参数）
-void handle_auth_error(int error_code, const char* error_detail) {
-  Serial.printf("认证错误[%d]: %s\n", error_code, error_detail);
-  lv_obj_t* msgbox = lv_msgbox_create(NULL, "认证失败", error_detail, NULL, true);
-  lv_obj_center(msgbox);
-}
-
-// 认证错误处理（认证失败时自动调用）
-// 参数：error_code-服务器返回的错误码
-void handle_auth_error(int error_code) {
-  // 实现具体的错误处理逻辑
-  Serial.printf("认证错误代码: %d\n", error_code);
-  lv_obj_t* msgbox = lv_msgbox_create(NULL, "认证失败", "请检查用户权限", NULL, true);
-  lv_obj_center(msgbox);
 }
 
 // 用户认证请求函数（应在用户输入信息后调用）
-// 参数：phone_suffix-手机号后四位，auth_type-认证类型(borrow/return)
+// 参数：phone_suffix-手机号后6位，auth_type-认证类型(borrow/return)
 // 使用示例：send_user_auth("6789", "borrow");
-void send_user_auth(const char* phone_suffix, const char* auth_type) {
-  JsonDocument doc;
-  doc["msg_id"] = "AUTH_" + String(millis()); // 生成唯一消息ID
-  doc["phone_suffix"] = phone_suffix;
-  doc["auth_type"] = auth_type;
-  doc["device_id"] = DEVICE_ID;
-  doc["timestamp"] = millis();
+void send_user_auth(const char* correlation_id, const char* auth_type) {
+    JsonDocument doc;
+    doc["correlation_id"] = correlation_id;
+    doc["auth_type"] = auth_type;
+    doc["timestamp"] = millis();
+  
+    char buffer[256];
+    serializeJson(doc, buffer);
+    client.publish("/device/" DEVICE_ID "/user_auth", buffer);
+    Serial.println("/device/" DEVICE_ID "/user_auth");
+    Serial.println(buffer);
+}
 
-  char buffer[256];
-  serializeJson(doc, buffer);
-  client.publish("/device/" DEVICE_ID "/user_auth", buffer);
-  Serial.println("/device/" DEVICE_ID "/user_auth");
-  Serial.println(buffer);
+void mqtt_publish(char *message){
+    client.publish(topic, message);
 }

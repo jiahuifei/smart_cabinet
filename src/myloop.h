@@ -21,7 +21,7 @@ struct MessageBoxInfo {
 };
 
 extern const char *currentOperationType;// 当前执行的操作类型
-extern const char *itemStatusList[4];// 四个物品的状态数组
+
 
 
 

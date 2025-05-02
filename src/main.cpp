@@ -9,7 +9,7 @@ void setup()
 {
   Serial.begin(115200);
   // 初始化mqtt
-  mqtt_initialize();
+  mqtt_init();
   
   static esp_lcd_panel_handle_t panel_handle = NULL; // 声明 LCD 面板
   static esp_lcd_touch_handle_t tp_handle = NULL;    // 声明触摸面板
@@ -52,7 +52,7 @@ void loop()
     ui_tick();
     lvgl_port_unlock();
   }
-  mqttloop();
+  mqtt_loop();
   super_loop();      // 可能涉及UI操作
   
 
