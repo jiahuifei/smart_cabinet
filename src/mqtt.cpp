@@ -52,7 +52,7 @@ void mqtt_init() {
     }
     // Publish and subscribe
     client.publish(topic, "Hi, I'm ESP32 ^^");
-    client.subscribe(topic);
+    client.subscribe("/server/CP_1/auth_response");
 }
 
 
