@@ -232,10 +232,10 @@ void updateItemSelectionPage() {
       lv_obj_add_flag(buttons[i], LV_OBJ_FLAG_CLICKABLE);
     } else {
       // 不需要领用的物品显示为灰色(禁用状态)
+      // 不需要领用的物品显示为灰色(禁用状态)
       lv_imgbtn_set_state(buttons[i], LV_IMGBTN_STATE_PRESSED);
       //设置改变其clickable值设置为为不可点击状态
       lv_obj_clear_flag(buttons[i], LV_OBJ_FLAG_CLICKABLE);
-     //lv_imgbtn_set_state(buttons[i], LV_IMGBTN_STATE_DISABLED);
     }
   }
 }
@@ -387,7 +387,19 @@ void processBorrowWorkflow() {
     case 4: // 用户点击了物品按钮
       // 记录开始时间
       processStartTime = millis();
-      currentWorkflowStage = 5;
+      if (selectedCabinet1 > 0) {
+        // 打开第一个格口
+        currentWorkflowStage = 5; // 进入等待格口关闭阶段 
+      }
+      else if (selectedCabinet2 > 0) {
+        // 打开第一个格口
+        currentWorkflowStage = 7; // 进入等待格口关闭阶段 
+      }
+      else {
+        // 没有需要打开的格口
+        currentWorkflowStage = 9; // 进入完成阶段 
+      }
+
       break;
       
     case 5: // 打开格口
@@ -423,7 +435,7 @@ void processBorrowWorkflow() {
         currentWorkflowStage = 6;
       }
       break;
-      
+    
     case 6: // 等待用户关闭格口
       {
         bool allCabinetsClosed = true;
@@ -446,12 +458,106 @@ void processBorrowWorkflow() {
         // Step8:完成关锁后的进度条更新
         if (allCabinetsClosed) {
           update_progress(66);
-          currentWorkflowStage = 7;
+          currentWorkflowStage = 9;
         }
       }
       break;
+    // 修改流程控制部分
+    // case 5: // 打开第一个格口
+    // {
+    //     // // 创建独立进度弹窗
+    //     // create_progress_msgbox("use", "please take out items！");
+    //     // update_progress(50);
+        
+    //     if (selectedCabinet1 > 0) {
+    //         // 创建独立进度弹窗
+    //         create_progress_msgbox("use", "please take out items！");
+    //         update_progress(50);
+    //         directOpenLockById(selectedCabinet1);
+    //         currentWorkflowStage = 6;
+    //     } else {
+    //         currentWorkflowStage = 6; // 跳过第一个
+    //     }
+    // }
+    // break;
+
+    // case 6: // 等待第一个格口关闭
+    // {
+    //   bool allCabinetsClosed = true;
+    //     // 检查格口是否已关闭
+    //     if (selectedCabinet1 > 0 && !isLockOpen(selectedCabinet1)) {
+    //       allCabinetsClosed = false;
+    //     }
+        
+    //     if (selectedCabinet2 > 0 && !isLockOpen(selectedCabinet2)) {
+    //       allCabinetsClosed = false;
+    //     }
+        
+    //     // 检查是否超时
+    //     if (millis() - processStartTime > 30000) { // 30秒超时
+    //       Serial.println("[Warning] 等待关门超时");
+    //       allCabinetsClosed = true; // 强制继续
+    //     }
+
+    //     if (allCabinetsClosed) {
+    //       close_progress_msgbox();
+    //       // 只禁用第一个格口相关按钮
+    //       lv_imgbtn_set_state(objects.home_select_btn0, LV_IMGBTN_STATE_PRESSED);
+    //       lv_obj_clear_flag(objects.home_select_btn0, LV_OBJ_FLAG_CLICKABLE);
+    //       lv_imgbtn_set_state(objects.home_select_btn1, LV_IMGBTN_STATE_PRESSED);
+    //       lv_obj_clear_flag(objects.home_select_btn1, LV_OBJ_FLAG_CLICKABLE);
+    //       lv_imgbtn_set_state(objects.home_select_btn2, LV_IMGBTN_STATE_PRESSED);
+    //       lv_obj_clear_flag(objects.home_select_btn2, LV_OBJ_FLAG_CLICKABLE);
+    //       selectedCabinet1 = -1;
+    //       currentWorkflowStage = 3; // 回到选择页面等待操作
+    //   }
+    // }
+    // break;
+
+    // case 7: // 打开第二个格口
+    // {
+    //     if (selectedCabinet2 > 0) {
+    //         create_progress_msgbox("use", "plase take out items！");
+    //         update_progress(50);
+    //         directOpenLockById(selectedCabinet2);
+    //         //等待用户点击
+    //         currentWorkflowStage = 8;
+    //     } else {
+    //         currentWorkflowStage = 8; // 没有第二个格口直接完成
+    //     }
+    // }
+    // break;
+
+    // case 8: // 等待第二个格口关闭
+    // {
+    //   bool allCabinetsClosed = true;
+    //   // 检查格口是否已关闭
+    //   if (selectedCabinet1 > 0 && !isLockOpen(selectedCabinet1)) {
+    //     allCabinetsClosed = false;
+    //   }
       
-    case 7: // 检查RFID标签
+    //   if (selectedCabinet2 > 0 && !isLockOpen(selectedCabinet2)) {
+    //     allCabinetsClosed = false;
+    //   }
+      
+    //   // 检查是否超时
+    //   if (millis() - processStartTime > 30000) { // 30秒超时
+    //     Serial.println("[Warning] 等待关门超时");
+    //     allCabinetsClosed = true; // 强制继续
+    //   }
+
+    //     if (allCabinetsClosed) {
+    //         close_progress_msgbox();
+    //         // 更新第二个格口按钮状态
+    //         lv_imgbtn_set_state(objects.home_select_btn3, LV_IMGBTN_STATE_PRESSED);
+    //         lv_obj_clear_flag(objects.home_select_btn3, LV_OBJ_FLAG_CLICKABLE);
+    //         selectedCabinet2 = -1;
+    //         currentWorkflowStage = 9;
+    //     }
+    // }
+    // break;
+      
+    case 9: // 检查RFID标签
       {
         // 准备检查的物品类型和天线
         const char* itemTypesToCheck[4] = {
@@ -469,16 +575,17 @@ void processBorrowWorkflow() {
           // 所有物品都已取出
           update_progress(100);
           close_progress_msgbox();
-          currentWorkflowStage = 8;
+          currentWorkflowStage = 10;
         } else {
           // 有物品未取出
           close_progress_msgbox();
           showBorrowErrorDialog();
+          currentWorkflowStage = 10;
         }
       }
       break;
       
-    case 8: // 完成流程
+    case 10: // 完成流程
       // 跳转到完成页面
       lv_tabview_set_act(objects.tabview, 3, LV_ANIM_ON);
       
@@ -568,7 +675,8 @@ void super_loop()
     }
     // 归还按钮处理
     if (lv_obj_has_state(objects.home_home_return, LV_STATE_PRESSED)) {
-      handleHomePageButton("Return", STATUS_RETURN);
+      handleHomePageButton("Borrow", STATUS_BORROW);
+      //handleHomePageButton("Return", STATUS_RETURN);
     }
   }
 
