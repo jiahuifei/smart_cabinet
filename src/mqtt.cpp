@@ -52,7 +52,7 @@ void mqtt_init() {
     }
     // Publish and subscribe
     client.publish(topic, "Hi, I'm ESP32 ^^");
-    client.subscribe(topic);
+    client.subscribe("/server/CP_1/auth_response");
 }
 
 
@@ -118,7 +118,7 @@ void callback(char *topic, byte *payload, unsigned int length) {
       user_id_received = false;
       Serial.println("用户不存在");
     }
-    else if(strcmp(status, "use") == 0) {
+    else if(strcmp(status, "use") == 0) { // Step4
       Serial.println("领用操作");
       user_id_received = true;
       // 解析物品状态数组

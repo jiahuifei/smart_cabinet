@@ -1,6 +1,6 @@
 {
   "navigation": {
-    "selectedUserPageObject": "[test.eez-project]:/userPages/1",
+    "selectedUserPageObject": "[test.eez-project]:/userPages/0",
     "selectedFontObject": "[test.eez-project]:/fonts/0",
     "selectedBitmapObject": "[test.eez-project]:/bitmaps/0",
     "subnavigationSelectedItems": {
@@ -129,7 +129,7 @@
             {
               "type": "row",
               "id": "#8014f5fb-5581-4def-8277-3bb64fb39dd1",
-              "weight": 15,
+              "weight": 25.929263120361078,
               "children": [
                 {
                   "type": "tabset",
@@ -200,7 +200,7 @@
             {
               "type": "tabset",
               "id": "EDITORS",
-              "weight": 57.19520319786809,
+              "weight": 46.26594007750702,
               "selected": 4,
               "enableDeleteWhenEmpty": false,
               "enableClose": false,
@@ -253,10 +253,10 @@
                 {
                   "type": "tab",
                   "id": "#4cf4eb58-a970-4131-a6ff-5819fd79df55",
-                  "name": "manage",
+                  "name": "Main",
                   "component": "editor",
                   "config": {
-                    "objectPath": "[test.eez-project]:/userPages/1",
+                    "objectPath": "[test.eez-project]:/userPages/0",
                     "permanent": false
                   },
                   "icon": "svg:page"
@@ -1041,7 +1041,9 @@
               "0": {}
             },
             "2": {
-              "0": {},
+              "0": {
+                "$selected": true
+              },
               "3": {},
               "5": {}
             },
@@ -1051,10 +1053,10 @@
       },
       "transform": {
         "translate": {
-          "x": -306.2742215154916,
-          "y": -209.25678287793374
+          "x": -282.78495254502025,
+          "y": -255.15510329376642
         },
-        "scale": 0.75
+        "scale": 0.8
       },
       "timeline": {
         "isEditorActive": false,
@@ -1120,10 +1122,10 @@
       },
       "transform": {
         "translate": {
-          "x": -474.0078146313862,
-          "y": -190.5389868174907
+          "x": -385.18821474545945,
+          "y": -165.60332747114649
         },
-        "scale": 1.1
+        "scale": 0.9
       },
       "timeline": {
         "isEditorActive": false,
@@ -1152,6 +1154,6 @@
   ],
   "showInactiveFlowsInDebugger": true,
   "globalFlowZoom": true,
-  "flowZoom": 1.1,
+  "flowZoom": 0.8,
   "implementationLanguage": "C"
 }

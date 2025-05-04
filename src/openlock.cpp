@@ -57,6 +57,7 @@ bool sendLockCommand(uint8_t b_address, uint8_t l_address) {
   return false;
 }
 
+// Step 7 : 判断是否关锁，查询锁状态
 // 查询状态
 bool queryDoorStatus(uint8_t b_address, uint8_t l_address) {
     uint8_t frame[5];
@@ -136,13 +137,13 @@ bool directOpenLockById(int lockId) {
     // 根据锁ID映射板地址和锁地址
     if (lockId >= 1 && lockId <= 24) {
         // 0x02板的1-24号锁
-        boardNo = 0x02;
+        boardNo = 0x02; // 锁控板
         lockNo = lockId;
     } else if (lockId >= 25 && lockId <= 36) {
         // 0x03板的1-12号锁
         boardNo = 0x03;
         lockNo = lockId - 24;
-    } else if (lockId >= 37 && lockId <= 48) {
+    } else if (lockId >= 37 && lockId <= 48) { // 帽子
         // 0x01板的1-12号锁
         boardNo = 0x01;
         lockNo = lockId - 36;

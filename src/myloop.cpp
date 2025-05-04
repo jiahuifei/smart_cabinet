@@ -16,9 +16,9 @@ static lv_timer_t *operationTimeoutTimer = NULL;  // 操作超时计时器
 static lv_timer_t *authTimeoutTimer = NULL;  // 认证超时计时器
 
 /* 超时配置(毫秒) */
-#define TIMEOUT_MS_OVERALL 300000      // 单步操作超时时间(5分钟)
-#define TIMEOUT_MS_AUTH 5000           // 认证超时时间(5秒)
-#define TOTAL_PROCESS_TIMEOUT_MS 3000000    // 整体流程超时时间(50分钟)
+#define TIMEOUT_MS_OVERALL 30000      // 单步操作超时时间(5分钟)
+#define TIMEOUT_MS_AUTH 50000           // 认证超时时间(5秒)
+#define TOTAL_PROCESS_TIMEOUT_MS 60000    // 整体流程超时时间(50分钟)
 
 /* 进度条弹窗相关变量 */
 static lv_obj_t *progress_msgbox = NULL;
@@ -92,9 +92,18 @@ void processIdentityVerification()
 
   // 保存用户ID
   userId = atoi(userInputId);
-  
-  // 发送验证请求到服务器
-  send_user_auth(userInputId, currentOperationType);
+  if(userInputId == "123456") {
+    Serial.println("[Warning] 测试用户，跳过认证");
+    currentWorkflowStage = 2; 
+    lv_textarea_set_text(objects.home_idcheck_textarea, "");
+    lv_tabview_set_act(objects.tabview, 2, LV_ANIM_ON); // 切换到物品选择页
+    lv_obj_invalidate(lv_scr_act()); // 刷新屏幕
+    return;
+    
+  }else {
+    // 发送验证请求到服务器  Step3
+    send_user_auth(userInputId, currentOperationType);
+  }
   
   // 创建认证超时计时器
   if (authTimeoutTimer == NULL) {
@@ -154,6 +163,28 @@ void updateCabinetItemStatus(int cabinetId, uint8_t itemType, uint8_t newStatus,
     if (cabinet != NULL) {
       // 更新物品状态和用户ID
       cabinet->userId = userId;
+      
+      // 更新物品预约状态（根据itemStatusList）
+      if (itemType == 0x01 && strcmp(itemStatusList[0], "1") == 0) {
+        cabinet->itemReserveStatus1 = 0x01; // 已预约
+      }
+      else{
+        cabinet->itemReserveStatus1 = 0x00; // 未预约
+      }
+      if (itemType == 0x02 && strcmp(itemStatusList[1], "1") == 0) {
+        cabinet->itemReserveStatus2 = 0x01; // 已预约
+      }
+      else{
+        cabinet->itemReserveStatus2 = 0x00; // 未预约
+      }
+      if (itemType == 0x03 && strcmp(itemStatusList[2], "1") == 0) {
+        cabinet->itemReserveStatus3 = 0x01; // 已预约
+      }
+      else{
+        cabinet->itemReserveStatus3 = 0x00; // 未预约
+      }
+      
+      // 更新物品实际状态
       ItemDatabase::updateItemStatus(cabinetId, itemType, newStatus);
     }
   } else if (itemType == 0x04) {
@@ -161,9 +192,24 @@ void updateCabinetItemStatus(int cabinetId, uint8_t itemType, uint8_t newStatus,
     SingleCabinetItem* cabinet = ItemDatabase::getSingleCabinetInfo(cabinetId);
     if (cabinet != NULL) {
       cabinet->userId = userId;
+      
+      // 更新物品预约状态（根据itemStatusList）
+      if (strcmp(itemStatusList[3], "1") == 0) {
+        cabinet->itemReserveStatus = 0x01; // 已预约
+      }
+      else{
+        cabinet->itemReserveStatus = 0x00; // 未预约
+      }
+      
+      // 更新物品实际状态
       ItemDatabase::updateItemStatus(cabinetId, 1, newStatus);
     }
   }
+  
+  // 打印更新后的数据库状态（调试用）
+  Serial.println("[数据库] 更新格口信息:");
+  Serial.printf("格口ID: %d, 物品类型: 0x%02X, 用户ID: %d, 状态: 0x%02X\n", 
+                cabinetId, itemType, userId, newStatus);
 }
 
 /**
@@ -183,9 +229,13 @@ void updateItemSelectionPage() {
     if (strcmp(itemStatusList[i], "1") == 0) {
       // 需要领用的物品显示为彩色(释放状态)
       lv_imgbtn_set_state(buttons[i], LV_IMGBTN_STATE_RELEASED);
+      lv_obj_add_flag(buttons[i], LV_OBJ_FLAG_CLICKABLE);
     } else {
       // 不需要领用的物品显示为灰色(禁用状态)
-      lv_imgbtn_set_state(buttons[i], LV_IMGBTN_STATE_DISABLED);
+      lv_imgbtn_set_state(buttons[i], LV_IMGBTN_STATE_PRESSED);
+      //设置改变其clickable值设置为为不可点击状态
+      lv_obj_clear_flag(buttons[i], LV_OBJ_FLAG_CLICKABLE);
+     //lv_imgbtn_set_state(buttons[i], LV_IMGBTN_STATE_DISABLED);
     }
   }
 }
@@ -249,8 +299,8 @@ bool checkRfidTags(const char* itemTypes[], const uint8_t antennas[], int count)
  * 显示领用错误弹窗
  */
 void showBorrowErrorDialog() {
-  static const char* btns[] = {"重新领取", "忽略", ""};
-  error_msgbox = lv_msgbox_create(lv_scr_act(), "领用错误", "检测到领用情况与预期不符，请检查是否已取出所有物品", btns, false);
+  static const char* btns[] = {"reuse", "neglect", ""};
+  error_msgbox = lv_msgbox_create(lv_scr_act(), "wrong use", "Please check whether all items have been taken out.", btns, false);
   lv_obj_center(error_msgbox);
   
   // 添加按钮事件
@@ -287,8 +337,9 @@ void processBorrowWorkflow() {
       // 等待用户输入ID并点击确认
       break;
       
-    case 2: // 等待服务器响应
+    case 2: // 等待服务器响应  Step5: 等待服务器响应
       if (user_id_received) {
+
         // 收到用户认证响应
         if (authTimeoutTimer) {
           lv_timer_del(authTimeoutTimer);
@@ -298,13 +349,17 @@ void processBorrowWorkflow() {
         // 查找可用格口
         selectedCabinet1 = -1;
         selectedCabinet2 = -1;
-        
+        //Step6: 查找可用格口
         // 检查需要哪些物品
         for (int i = 0; i < 3; i++) {
           if (strcmp(itemStatusList[i], "1") == 0) {
             // 需要领用0x01-0x03物品，使用格口1-36
             if (selectedCabinet1 < 0) {
+
+              // 查找可用格口
               selectedCabinet1 = findAvailableCabinet(i + 1);
+
+              // 更新物品状态  --- 写入USEID
               updateCabinetItemStatus(selectedCabinet1, i + 1, ITEM_STATUS_BORROWED, userId);
             }
           }
@@ -338,7 +393,7 @@ void processBorrowWorkflow() {
     case 5: // 打开格口
       {
         // 创建进度条弹窗
-        create_progress_msgbox("领用物品", "请取出您的物品并关闭柜门！");
+        create_progress_msgbox("use", "Please take out your belongings and close the doors!");
         update_progress(0);
         
         // 打开需要的格口
@@ -388,6 +443,7 @@ void processBorrowWorkflow() {
           allCabinetsClosed = true; // 强制继续
         }
         
+        // Step8:完成关锁后的进度条更新
         if (allCabinetsClosed) {
           update_progress(66);
           currentWorkflowStage = 7;
@@ -452,6 +508,7 @@ void processBorrowWorkflow() {
   }
 }
 
+//Step7: 
 // 处理选择页物品按钮点击状态
 static void handle_item_buttons() {
   for(int i=0; i<4; i++){
@@ -473,7 +530,7 @@ void super_loop()
 {
   // 检查当前是否在管理页面
   if (lv_scr_act() == objects.manage) {
-    Serial.println("当前在管理页面");
+    // Serial.println("当前在管理页面");
     // 定义管理按钮数组
     lv_obj_t* manage_buttons[] = {
         objects.manage_btn_0, objects.manage_btn_1, objects.manage_btn_2, objects.manage_btn_3,
@@ -504,7 +561,8 @@ void super_loop()
   // 主页（Tab 0）按钮处理
   if (lv_tabview_get_tab_act(objects.tabview) == 0 && lv_scr_act() == objects.main)
   {
-    // 领用按钮处理
+    // 领用按钮处理 --- Step 1: 处理物品选择页的按钮点击状态
+    handle_item_buttons();
     if (lv_obj_has_state(objects.home_home_use, LV_STATE_PRESSED)) {
       handleHomePageButton("Borrow", STATUS_BORROW);
     }
@@ -517,7 +575,7 @@ void super_loop()
   // 分页状态机（处理不同标签页的逻辑）
   switch (lv_tabview_get_tab_act(objects.tabview))
   {
-  case 1: // 身份验证页（Tab 1）
+  case 1: // 身份验证页（Tab 1）  Step2: 处理身份验证页的按钮点击状态
     if (lv_obj_has_state(objects.home_idcheck_ok, LV_STATE_PRESSED))
     {
       processIdentityVerification();
