@@ -1,5 +1,7 @@
 #include <main.h>
 
+
+
 // const char* ssid = "306";
 // const char* password = "123456789";
 const char* host = "192.168.101.109";
@@ -263,69 +265,86 @@ bool cmd_stop_inventory() //(停止读标签)
 }
 
 
-String read_tag_re() // 处理读取标签数据并返回EPC值
+TagData read_tag_data() // 处理读取标签数据并返回标签结构体
 {
+  TagData tag = {0};  // 初始化结构体
+  tag.valid = false;  // 默认数据无效
+  
   Serial.println("开始读取标签数据");
   if(rfid_client.available()) {
-    // Serial.println("有数据");
-    uint8_t header = rfid_client.read();
-    if(header == 0xD9) {  // 验证包头
-      // Serial.print("有包头");
-      // Serial.println(header, HEX);
-      uint8_t len = rfid_client.read();
-      // Serial.print("len:");
-      // Serial.println(len, HEX);
-      if(rfid_client.available() >= len) { 
-        // Serial.println("有数据");
-        uint8_t response[len];
-        rfid_client.readBytes(response, len);
-        // for(size_t i=0; i<len; i++) {
-        //   Serial.printf("%02X ", response[i]);
-        // }
-        // Serial.println();
-        // 检查响应格式: 0x0100 0x30 0x01 1Byte 1Byte 2Byte NByte 2Byte 2Byte N Byte 1Byte CK
+    tag.head = rfid_client.read();
+    if(tag.head == 0xD9) {  // 验证包头
+      tag.len = rfid_client.read();
+      
+      if(rfid_client.available() >= tag.len) { 
+        uint8_t response[tag.len];
+        rfid_client.readBytes(response, tag.len);
+        
+        // 检查响应格式
         if(response[0] == 0x01 && 
            response[1] == 0x00 &&
-           response[2] == 0x20||0x30 && 
+           (response[2] == 0x20 || response[2] == 0x30) && 
            response[3] == 0x01) {
+          
           Serial.print("读取到一个标签:");
-          Serial.print(header, HEX);
+          Serial.print(tag.head, HEX);
           Serial.print(" ");
-          Serial.print(len, HEX);
+          Serial.print(tag.len, HEX);
           Serial.print(" ");
-          for(size_t i=0; i<len; i++) {
+          for(size_t i=0; i<tag.len; i++) {
             Serial.printf("%02X ", response[i]);
           }
           Serial.println();
-          // 解析EPC数据
-          uint8_t epcLen = calculateEPCLength(response[6], response[7]); 
-          // Serial.print("EPC长度:");
-          // Serial.println(epcLen);
-          uint8_t epc[epcLen];
-          for(int i=0; i<epcLen; i++){
-            epc[i] = response[8+i]; 
+          
+          // 复制数据到结构体
+          memcpy(tag.reserved, &response[0], 2);  // 0x0100
+          tag.cmd = response[2];                  // 0x20 或 0x30
+          tag.flags = response[3];                // 0x01
+          tag.freq = response[4];
+          tag.ant = response[5];
+          
+          // 复制PC值
+          memcpy(tag.pc, &response[6], 2);
+          
+          // 计算并复制EPC
+          tag.epcLen = calculateEPCLength(response[6], response[7]);
+          memcpy(tag.epc, &response[8], tag.epcLen);
+          
+          // 复制CRC和RSSI
+          int offset = 8 + tag.epcLen;//计算crc和rssi的偏移量
+          if(offset + 4 <= tag.len) {
+            memcpy(tag.crc, &response[offset], 2);
+            memcpy(tag.rssi, &response[offset+2], 2);
+            
+            // 如果还有数据字段
+            if(offset + 4 < tag.len - 1) {  // 减1是为了排除CK
+              tag.dataLen = (tag.len - (offset + 4 + 1)) / 2;  // 数据长度 = (总长 - 前面字段 - CK) / 2
+              if(tag.dataLen > 0) {
+                memcpy(tag.data, &response[offset+4], tag.dataLen * 2);
+              }
+            }
           }
-          // Serial.print("EPC HEX:");
-          // for(int i=0; i<epcLen; i++){
-          //   Serial.printf("%02X ", epc[i]);
-          // }
-          // Serial.println();
-          // 转换为16进制字符串
-          String epcStr = "";
-          for(int i=0; i<epcLen; i++) {
+          
+          // 最后一个字节是CK
+          tag.ck = response[tag.len-1];
+          
+          // 转换EPC为十六进制字符串
+          tag.epcStr = "";
+          for(int i=0; i<tag.epcLen; i++) {
             char buf[3];
-            sprintf(buf, "%02X", epc[i]);
-            epcStr += buf;
+            sprintf(buf, "%02X", tag.epc[i]);
+            tag.epcStr += buf;
           }
-          //Serial.println("EPC STR: " + epcStr);
+          
+          tag.valid = true;  // 标记数据有效
           rfid_client.clear();
-          return epcStr; // 返回EPC值;
         }
       }
     }
   }
-  return ""; // 没有标签数据时返回空字符串
+  return tag; // 返回标签结构体
 }
+
 
 void rfid_init() {
   if(rfid_client.connect(host, port)){
@@ -340,17 +359,20 @@ void rfid_init() {
   }
 }
 
+//读一个标签就停止
 bool rfid_loop(String epc_id,uint8_t ant) {
   if(rfid_client.connected()){
     // 开始盘点标签
     if(cmd_read_tag(ant)){
-      String epc;
+      TagData tag; // 修改为TagData类型
+      String epc; // 用于存储EPC字符串
       unsigned long startTime = millis(); // 记录开始时间
       const unsigned long timeout = 5000; // 设置超时时间为10秒
 
       // 持续读取直到获取到标签或超时
       while(true){
-        epc = read_tag_re();
+        tag = read_tag_data();
+        epc = tag.epcStr; // 获取EPC字符串
         if(epc != "" && epc.startsWith(epc_id)){  // 读取到有效标签且前两位是01
           Serial.println("读取到有效标签EPC: " + epc);
           break;  // 跳出循环
