@@ -20,7 +20,7 @@ uint16_t calculateCRC16(uint8_t *data, uint8_t length) {
 }
 
 // 发送报警命令, station_id为站号(默认FF)，cmd_type为命令类型
-bool send_alarm_command(uint8_t station_id = 0xFF, AlarmCommandType cmd_type = ALARM_RED_LIGHT_ON) {
+bool send_alarm_command(uint8_t station_id, AlarmCommandType cmd_type) {
     // 构建命令数组
     uint8_t cmd[8];
     
