@@ -27,6 +27,7 @@
 #include "openlock.h"
 #include "rfid.h"
 #include "database.h"
+#include "alarm.h"
 
 
 #endif /*MAIN_H*/
