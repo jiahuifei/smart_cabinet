@@ -284,7 +284,7 @@ bool checkRfidTags(const char* itemTypes[], const uint8_t antennas[], int count)
     if (strcmp(itemTypes[i], "1") == 0) {
       // 需要领用的物品，应该读不到标签(返回false)
       String epc_id = String("0") + String(i + 1); // 构造EPC ID: "01", "02", "03", "04"
-      if (rfid_loop(epc_id, antennas[i])) {
+      if (rfid1.rfid_loop(epc_id, antennas[i])) {
         // 如果读到标签，说明物品未取出
         allItemsTaken = false;
         Serial.printf("[Warning] 物品 %s 未取出\n", epc_id.c_str());

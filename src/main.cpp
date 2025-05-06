@@ -11,7 +11,7 @@ void setup()
   // 初始化mqtt
   mqtt_init();
   rs485_init();
-  rfid_init();
+  rfid_all_init();
   ItemDatabase::init();
   
   static esp_lcd_panel_handle_t panel_handle = NULL; // 声明 LCD 面板

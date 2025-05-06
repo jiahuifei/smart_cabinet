@@ -1,15 +1,16 @@
 #include <main.h>
 
+// 定义两个RFID读写器
+RFIDReader rfid1("192.168.101.109", 4001);
+RFIDReader rfid2("192.168.101.110", 4001); // 第二个读写器的IP和端口
 
+// 构造函数
+RFIDReader::RFIDReader(const char* host, uint16_t port) {
+  this->host = host;
+  this->port = port;
+}
 
-// const char* ssid = "306";
-// const char* password = "123456789";
-const char* host = "192.168.101.109";
-const uint16_t port = 4001;
-
-WiFiClient rfid_client;
-
-uint8_t calculateEPCLength(uint8_t pc_high, uint8_t pc_low) // 计算EPC长度
+uint8_t RFIDReader::calculateEPCLength(uint8_t pc_high, uint8_t pc_low) // 计算EPC长度
 {
   // 将两个字节合并为16位数值（高位在前）
   uint16_t pc = (pc_high << 8) | pc_low;
@@ -20,7 +21,7 @@ uint8_t calculateEPCLength(uint8_t pc_high, uint8_t pc_low) // 计算EPC长度
   return high5bits * 2;
 }
 
-uint8_t CKSum(uint8_t *uBuff, uint8_t uBuffLen) // 校验和计算
+uint8_t RFIDReader::CKSum(uint8_t *uBuff, uint8_t uBuffLen) // 校验和计算
 {
   uint8_t uSum = 0;
   for(uint8_t i=0; i<uBuffLen; i++) {
@@ -29,7 +30,7 @@ uint8_t CKSum(uint8_t *uBuff, uint8_t uBuffLen) // 校验和计算
   return (~uSum) + 1;
 }
 
-float calculateRSSI(uint8_t rssi_low, uint8_t rssi_high) // 计算RSSI值
+float RFIDReader::calculateRSSI(uint8_t rssi_low, uint8_t rssi_high) // 计算RSSI值
 {
   // 高低字节相反，变为高字节在前
   uint16_t rssi_value = (rssi_high << 8) | rssi_low;
@@ -43,7 +44,27 @@ float calculateRSSI(uint8_t rssi_low, uint8_t rssi_high) // 计算RSSI值
   return real_rssi;
 }
 
-bool cmd_get_firmware_version() //(查询固件版本)
+bool RFIDReader::connect() {
+  return client.connect(host, port);
+}
+
+bool RFIDReader::init() {//初始化读写器,client.connected()
+  if(client.connected()){
+    Serial.println("连接读写器成功");
+    while(!cmd_stop_inventory()){delay(1000);}
+    delay(500);
+    while(!cmd_get_firmware_version()){
+      Serial.println("读写器初始化失败");
+      delay(1000);
+    }
+    Serial.println("读写器初始化成功");
+    return true;
+  }
+  Serial.println("连接读写器失败");
+  return false;
+}
+
+bool RFIDReader::cmd_get_firmware_version() //(查询固件版本)
 {
   uint8_t packet[] = {
     0xD9,               // Head
@@ -53,8 +74,8 @@ bool cmd_get_firmware_version() //(查询固件版本)
     0x12                // CK (示例值，实际需要计算)
   };
 
-  rfid_client.clear();
-  rfid_client.write(packet, sizeof(packet));
+  client.clear();
+  client.write(packet, sizeof(packet));
   Serial.print("查询固件版本:");
   for(size_t i=0; i<sizeof(packet); i++) {
     Serial.printf("%02X ", packet[i]);
@@ -64,12 +85,12 @@ bool cmd_get_firmware_version() //(查询固件版本)
   // 等待并检查响应
   unsigned long startTime = millis();
   while(millis() - startTime < 5000) { // 等待5秒超时
-    int available = rfid_client.available();
+    int available = client.available();
     // Serial.printf("available: %d\n", available);
     if(available >= 8) { // 最小响应长度
-      if(rfid_client.available() >= 8 && available < 0x36) { // 预期响应8字节
+      if(client.available() >= 8 && available < 0x36) { // 预期响应8字节
         uint8_t response[8];
-        rfid_client.readBytes(response, 8);
+        client.readBytes(response, 8);
         // 检查响应格式: D9 06 0100 10 XX XX XX XX
         if(response[0] == 0xD9 && 
            response[1] == 0x06 &&
@@ -85,12 +106,7 @@ bool cmd_get_firmware_version() //(查询固件版本)
         }
       }else if(available >= 0x36) {
         uint8_t response[0x36];
-        rfid_client.readBytes(response, 0x36);
-        // Serial.println("查询结果:");
-        // for(size_t i=0; i<0x36; i++) {
-        //   Serial.printf("%02X ", response[i]);
-        // }
-        // Serial.println();
+        client.readBytes(response, 0x36);
         // 检查响应格式: D9 34 0100 10 XX XX XX XX
         if(response[0] == 0xD9 &&
            response[1] == 0x34 &&
@@ -112,7 +128,7 @@ bool cmd_get_firmware_version() //(查询固件版本)
   return false;
 }
 
-bool cmd_read_tag(uint8_t ant) //(读指定天线标签)
+bool RFIDReader::cmd_read_tag(uint8_t ant) //(读指定天线标签)
 {
   uint8_t packet[] = {
     0xD9,               // Head
@@ -130,9 +146,9 @@ bool cmd_read_tag(uint8_t ant) //(读指定天线标签)
   
   uint8_t ck = CKSum(packet, sizeof(packet));
 
-  rfid_client.clear();
-  rfid_client.write(packet, sizeof(packet));
-  rfid_client.write(ck);
+  client.clear();
+  client.write(packet, sizeof(packet));
+  client.write(ck);
   Serial.print("开始读标签:");
   for(size_t i=0; i<sizeof(packet); i++) {
     Serial.printf("%02X ", packet[i]);
@@ -142,11 +158,10 @@ bool cmd_read_tag(uint8_t ant) //(读指定天线标签)
   // 等待并检查响应
   unsigned long startTime = millis();
   while(millis() - startTime < 2000) { // 等待1秒超时
-    int available = rfid_client.available();
-    // Serial.printf("available: %d\n", available);
+    int available = client.available();
     if(available >= 8) { // 预期响应8字节
       uint8_t response[8];
-      rfid_client.readBytes(response, 8);
+      client.readBytes(response, 8);
       
       // 检查响应格式: D9 06 0100 30 00 00 CK
       if(response[0] == 0xD9 && 
@@ -171,7 +186,7 @@ bool cmd_read_tag(uint8_t ant) //(读指定天线标签)
   return false;
 }
 
-bool cmd_inventory_epc() //(盘存标签 EPC 数据)【最常用的读标签数据指令】
+bool RFIDReader::cmd_inventory_epc() //(盘存标签 EPC 数据)【最常用的读标签数据指令】
 {
   uint8_t packet[] = {
     0xD9,               // Head
@@ -180,8 +195,8 @@ bool cmd_inventory_epc() //(盘存标签 EPC 数据)【最常用的读标签数�
     0x20,               // Cmd (盘存标签)
     0x02                // Flags:0x02(盘存EPC)
   };
-  rfid_client.clear();
-  rfid_client.write(packet, sizeof(packet));
+  client.clear();
+  client.write(packet, sizeof(packet));
   Serial.print("开始盘点EPC:");
   for(size_t i=0; i<sizeof(packet); i++) {
     Serial.printf("%02X ", packet[i]);
@@ -191,16 +206,16 @@ bool cmd_inventory_epc() //(盘存标签 EPC 数据)【最常用的读标签数�
   // 等待并检查响应
   unsigned long startTime = millis();
   while(millis() - startTime < 5000) { // 等待1秒超时
-    if(rfid_client.available() >= 7) { // 预期响应7字节
+    if(client.available() >= 7) { // 预期响应7字节
       uint8_t response[8];
-      rfid_client.readBytes(response, 8);
+      client.readBytes(response, 8);
       
       // 检查响应格式: D9 06 0100 20 00 00 CK
       if(response[0] == 0xD9 && 
          response[1] == 0x06 &&
          response[2] == 0x01 && 
          response[3] == 0x00 &&
-         response[4] == 0x20||0x30 &&
+         (response[4] == 0x20 || response[4] == 0x30) &&
          response[5] == 0x00 &&
          response[6] == 0x00 &&
          response[7] == 0x00) {
@@ -218,7 +233,7 @@ bool cmd_inventory_epc() //(盘存标签 EPC 数据)【最常用的读标签数�
   return false;
 }
 
-bool cmd_stop_inventory() //(停止读标签)
+bool RFIDReader::cmd_stop_inventory() //(停止读标签)
 {
   uint8_t packet[] = {
     0xD9,               // Head
@@ -228,8 +243,8 @@ bool cmd_stop_inventory() //(停止读标签)
     0xF3                // CK
   };
   
-  rfid_client.clear();
-  rfid_client.write(packet, sizeof(packet));
+  client.clear();
+  client.write(packet, sizeof(packet));
   Serial.print("停止读标签:");
   for(size_t i=0; i<sizeof(packet); i++) {
     Serial.printf("%02X ", packet[i]);
@@ -239,11 +254,10 @@ bool cmd_stop_inventory() //(停止读标签)
   // 等待并检查响应
   unsigned long startTime = millis();
   while(millis() - startTime < 2000) { // 等待2秒超时
-    uint8_t available = rfid_client.available();
-    // Serial.printf("available: %d\n", available);
+    uint8_t available = client.available();
     if(available >= 8) { // 预期响应8字节
       uint8_t response[8];
-      rfid_client.readBytes(response, 8);
+      client.readBytes(response, 8);
       
       // 检查响应格式
       if(response[0] == 0xD9 && 
@@ -278,21 +292,20 @@ bool cmd_stop_inventory() //(停止读标签)
   return false;
 }
 
-
-TagData read_tag_data() // 处理读取标签数据并返回标签结构体
+TagData RFIDReader::read_tag_data() // 处理读取标签数据并返回标签结构体
 {
   TagData tag = {0};  // 初始化结构体
   tag.valid = false;  // 默认数据无效
   
   Serial.println("开始读取标签数据");
-  if(rfid_client.available()) {
-    tag.head = rfid_client.read();
+  if(client.available()) {
+    tag.head = client.read();
     if(tag.head == 0xD9) {  // 验证包头
-      tag.len = rfid_client.read();
+      tag.len = client.read();
       
-      if(rfid_client.available() >= tag.len) { 
+      if(client.available() >= tag.len) { 
         uint8_t response[tag.len];
-        rfid_client.readBytes(response, tag.len);
+        client.readBytes(response, tag.len);
         
         // 检查响应格式
         if(response[0] == 0x01 && 
@@ -353,7 +366,7 @@ TagData read_tag_data() // 处理读取标签数据并返回标签结构体
           }
           
           tag.valid = true;  // 标记数据有效
-          rfid_client.clear();
+          client.clear();
         }
       }
     }
@@ -361,35 +374,20 @@ TagData read_tag_data() // 处理读取标签数据并返回标签结构体
   return tag; // 返回标签结构体
 }
 
-
-void rfid_init() {
-  if(rfid_client.connect(host, port)){
-    Serial.println("连接读写器成功");
-    while(!cmd_stop_inventory()){delay(1000);}
-    delay(500);
-    while(!cmd_get_firmware_version()){
-      Serial.println("读写器初始化失败");
-      delay(1000);
-    }
-    Serial.println("读写器初始化成功");
-  }
-}
-
-//读一个标签就停止
-bool rfid_loop(String epc_id,uint8_t ant) {
-  if(rfid_client.connected()){
+bool RFIDReader::rfid_loop(String epc_id, uint8_t ant) {//demo函数
+  if(client.connected()){
     // 开始盘点标签
     if(cmd_read_tag(ant)){
       TagData tag; // 修改为TagData类型
       String epc; // 用于存储EPC字符串
       unsigned long startTime = millis(); // 记录开始时间
-      const unsigned long timeout = 5000; // 设置超时时间为10秒
+      const unsigned long timeout = 5000; // 设置超时时间为5秒
 
       // 持续读取直到获取到标签或超时
       while(true){
         tag = read_tag_data();
         epc = tag.epcStr; // 获取EPC字符串
-        if(epc != "" && epc.startsWith(epc_id)){  // 读取到有效标签且前两位是01
+        if(epc != "" && epc.startsWith(epc_id)){  // 读取到有效标签且前缀匹配
           Serial.println("读取到有效标签EPC: " + epc);
           break;  // 跳出循环
         }
@@ -412,4 +410,50 @@ bool rfid_loop(String epc_id,uint8_t ant) {
     Serial.println("连接读写器失败");
     return false;
   }
+}
+
+
+void rfid_all_init() {
+
+  // 初始化第一个读写器
+  if(rfid1.connect()) {
+    if(rfid1.init()) {
+      Serial.println("RFID读写器1初始化成功");
+    } else {
+      Serial.println("RFID读写器1初始化失败");
+    }
+  } else {
+    Serial.println("RFID读写器1连接失败");
+  }
+  
+  // 初始化第二个读写器
+  if(rfid2.connect()) {
+    if(rfid2.init()) {
+      Serial.println("RFID读写器2初始化成功");
+    } else {
+      Serial.println("RFID读写器2初始化失败");
+    }
+  } else {
+    Serial.println("RFID读写器2连接失败");
+  }
+}
+
+void rfid_all_test() {
+  // 使用第一个读写器读取标签
+  if(rfid1.isConnected()) {
+    if(rfid1.rfid_loop("01", 1)) { // 查找以"01"开头的标签，使用天线1
+      Serial.println("RFID读写器1成功读取标签");
+    }
+  }
+  
+  delay(1000);
+  
+  // 使用第二个读写器读取标签
+  if(rfid2.isConnected()) {
+    if(rfid2.rfid_loop("02", 1)) { // 查找以"02"开头的标签，使用天线1
+      Serial.println("RFID读写器2成功读取标签");
+    }
+  }
+  
+
 }

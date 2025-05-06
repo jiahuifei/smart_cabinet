@@ -26,12 +26,46 @@ struct TagData {
   };
   
 
-void rfid_init();
-bool rfid_loop(String epc_id,uint8_t ant);
-TagData read_tag_data();
-bool cmd_stop_inventory();
-bool cmd_inventory_epc();
-bool cmd_read_tag(uint8_t ant);
-bool cmd_get_firmware_version();
+class RFIDReader {
+private:
+  const char* host;     // 读写器IP地址
+  uint16_t port;        // 读写器端口
+  WiFiClient client;    // WiFi客户端
+
+  // 工具函数
+  uint8_t calculateEPCLength(uint8_t pc_high, uint8_t pc_low);
+  uint8_t CKSum(uint8_t *uBuff, uint8_t uBuffLen);
+  float calculateRSSI(uint8_t rssi_low, uint8_t rssi_high);
+
+public:
+  // 构造函数
+  RFIDReader(const char* host, uint16_t port);
+  
+  // 连接和初始化
+  bool connect();
+  bool init();
+  
+  // 命令函数
+  bool cmd_get_firmware_version();
+  bool cmd_read_tag(uint8_t ant);
+  bool cmd_inventory_epc();
+  bool cmd_stop_inventory();
+  
+  // 数据处理
+  TagData read_tag_data();
+  
+  // 高级功能
+  bool rfid_loop(String epc_id, uint8_t ant);
+  
+  // 检查连接状态
+  bool isConnected() { return client.connected(); }
+};
+
+extern RFIDReader rfid1;
+extern RFIDReader rfid2;
+
+
+void rfid_all_init();
+void rfid_all_test();
 
 #endif // !RFID_H
