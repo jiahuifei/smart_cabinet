@@ -22,6 +22,7 @@ struct TagData {
     uint8_t ck;
     bool valid;           // 标记数据是否有效
     String epcStr;        // 存储EPC的十六进制字符串
+    float rssiValue;      // 计算后的RSSI值
   };
   
 

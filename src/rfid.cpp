@@ -29,6 +29,20 @@ uint8_t CKSum(uint8_t *uBuff, uint8_t uBuffLen) // 校验和计算
   return (~uSum) + 1;
 }
 
+float calculateRSSI(uint8_t rssi_low, uint8_t rssi_high) // 计算RSSI值
+{
+  // 高低字节相反，变为高字节在前
+  uint16_t rssi_value = (rssi_high << 8) | rssi_low;
+  
+  // 转换为有符号整数
+  int16_t signed_rssi = rssi_value;
+  
+  // 除以10得到实际的RSSI值
+  float real_rssi = signed_rssi / 10.0f;
+  
+  return real_rssi;
+}
+
 bool cmd_get_firmware_version() //(查询固件版本)
 {
   uint8_t packet[] = {
@@ -315,6 +329,8 @@ TagData read_tag_data() // 处理读取标签数据并返回标签结构体
           if(offset + 4 <= tag.len) {
             memcpy(tag.crc, &response[offset], 2);
             memcpy(tag.rssi, &response[offset+2], 2);
+            // 计算实际RSSI值
+            tag.rssiValue = calculateRSSI(tag.rssi[0], tag.rssi[1]);
             
             // 如果还有数据字段
             if(offset + 4 < tag.len - 1) {  // 减1是为了排除CK
