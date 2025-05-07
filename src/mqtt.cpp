@@ -1,6 +1,6 @@
 #include <main.h>
 // WiFi
-const char *ssid = "306"; // Enter your Wi-Fi name
+const char *ssid = "cb"; // Enter your Wi-Fi name
 const char *password = "123456789";  // Enter Wi-Fi password
 
 // MQTT Broker

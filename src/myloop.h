@@ -13,7 +13,7 @@ static void check_progress_complete(int32_t value);
 void create_progress_msgbox(const char *title, const char *message);
 void update_progress(int value);
 void close_progress_msgbox();
-
+void CheckDoorState();
 
 struct MessageBoxInfo {
     lv_obj_t* msgbox;

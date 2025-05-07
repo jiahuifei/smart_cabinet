@@ -6,6 +6,8 @@
 #define STATUS_RETURN "1"
 #define STATUS_MAINTAIN "2"
 
+#define MAINTAIN_ACCOUNT  "123456"
+
 /* 系统全局状态变量 */
 const char *currentOperationType = STATUS_NULL;  // 当前执行的操作类型
 
@@ -31,6 +33,11 @@ static int selectedCabinet1 = -1;  // 选中的第一个格口
 static int selectedCabinet2 = -1;  // 选中的第二个格口
 static uint32_t userId = 0;        // 用户ID
 
+/*
+   定义当前开门的ID列表
+*/
+static bool isControlIDS[48] = {false};
+
 /**
  * 处理主页按钮点击事件
  * @param operationName 操作名称(用于日志)
@@ -39,6 +46,8 @@ static uint32_t userId = 0;        // 用户ID
 static void handleHomePageButton(const char* operationName, const char* operationType) 
 {
   Serial.printf("[系统操作] 用户选择: %s\n", operationName);
+
+  // 更改状态变量
   currentOperationType = operationType;
   currentWorkflowStage = 1; // 进入身份验证阶段
   lv_tabview_set_act(objects.tabview, 1, LV_ANIM_ON); // 切换到身份验证页
@@ -238,6 +247,44 @@ void updateItemSelectionPage() {
       lv_obj_clear_flag(buttons[i], LV_OBJ_FLAG_CLICKABLE);
     }
   }
+}
+
+/*
+
+*/
+void CheckDoorState(){
+    // 弹出对话框
+    Serial.println("Update : Open model dialog");
+
+    //  循环检查
+    Serial.println("Update : loop check");
+
+    // while (true)
+    // {
+    
+      for (int inx  = 0 ; inx < 48; inx ++){
+        bool retItem = isControlIDS[inx];
+
+        if (!retItem) continue;
+
+        // 发送门状态查询指令
+        // send()
+
+        break;
+
+      }
+      
+    //   delay
+    // }
+
+
+
+    // 关闭对话框
+    Serial.println("Update : Close model dialog");
+
+    // 回到主页
+    lv_scr_load(objects.main);
+
 }
 
 /**
@@ -658,12 +705,19 @@ void super_loop()
     // 遍历所有管理按钮(0-48)
     for(int i = 0; i <= 48; i++) {
         if(manage_buttons[i] && lv_obj_has_state(manage_buttons[i], LV_STATE_PRESSED)) {
-            directOpenLockById(i);  // 按钮编号直接对应锁ID
+            bool ret = directOpenLockById(i);  // 按钮编号直接对应锁ID
+
+            if (ret){
+              Serial.println("Update : Door open ,Record id");
+              isControlIDS[i] = ret;
+            }
+
             Serial.printf("[Action] 按钮 %d 按下，打开锁 %d\n", i, i);
             break;  // 一次只处理一个按钮
         }
     }
   }
+
     
   // 主页（Tab 0）按钮处理
   if (lv_tabview_get_tab_act(objects.tabview) == 0 && lv_scr_act() == objects.main)
@@ -678,6 +732,12 @@ void super_loop()
       handleHomePageButton("Borrow", STATUS_BORROW);
       //handleHomePageButton("Return", STATUS_RETURN);
     }
+
+    // 维护按钮
+    if (lv_obj_has_state(objects.home_home_maintain, LV_STATE_PRESSED)) {
+          handleHomePageButton("MAINTAIN", STATUS_MAINTAIN);
+          //handleHomePageButton("Return", STATUS_RETURN);
+    }
   }
 
   // 分页状态机（处理不同标签页的逻辑）
@@ -686,8 +746,21 @@ void super_loop()
   case 1: // 身份验证页（Tab 1）  Step2: 处理身份验证页的按钮点击状态
     if (lv_obj_has_state(objects.home_idcheck_ok, LV_STATE_PRESSED))
     {
-      processIdentityVerification();
-      currentWorkflowStage = 2; // 进入等待服务器响应阶段
+      // 如果是维护状态，则直接验证本账号
+      if (currentOperationType ==STATUS_MAINTAIN ){
+          Serial.println("Update : In Maintain mode");
+          // MAINTAIN_ACCOUNT
+          const char *userInputId = lv_textarea_get_text(objects.home_idcheck_textarea);
+          if (strcmp(userInputId, MAINTAIN_ACCOUNT) == 0){
+              // Modi:跳转到维护界面
+              lv_scr_load(objects.manage);
+          }
+      }
+      else{
+        processIdentityVerification();
+        currentWorkflowStage = 2; // 进入等待服务器响应阶段
+      }
+
     }
     break;
     

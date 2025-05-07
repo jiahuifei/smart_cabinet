@@ -10,12 +10,11 @@ extern "C" {
 typedef struct _objects_t {
     lv_obj_t *main;
     lv_obj_t *manage;
-    lv_obj_t *home_home_maintain;
-    lv_obj_t *obj0;
     lv_obj_t *tabview;
     lv_obj_t *home_home;
     lv_obj_t *home_home_use;
     lv_obj_t *home_home_return;
+    lv_obj_t *home_home_maintain;
     lv_obj_t *home_idcheck;
     lv_obj_t *home_idcheck_ok;
     lv_obj_t *home_idcheck_keyboard;
@@ -80,6 +79,7 @@ typedef struct _objects_t {
     lv_obj_t *manage_btn_11;
     lv_obj_t *manage_btn_12;
     lv_obj_t *manage_btn_0;
+    lv_obj_t *btn_go_main;
 } objects_t;
 
 extern objects_t objects;

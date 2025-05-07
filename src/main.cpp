@@ -5,6 +5,20 @@ void lvgl_log_print(const char * msg) { // 移除int level参数
     Serial.printf("[LVGL] %s\n", msg);  // 简化输出格式
 }
 
+
+/**
+* @brief 按钮回调
+* @param *e ：事件相关参数的集合，它包含了该事件的所有数据
+* @return 无
+*/
+static void triggle_home_event_cb(lv_event_t * e)
+{
+  Serial.println("Update : Home button was triggle");
+
+  // 更新们状态，到数据库
+  CheckDoorState();
+}
+
 void setup()
 {
   Serial.begin(115200);
@@ -35,6 +49,12 @@ void setup()
   if (lvgl_port_lock(-1))
   {
     ui_init();
+
+    // 注册特殊按钮的回调事件
+    Serial.println("Update : add home button callback");
+    /* 设置按钮事件 */
+    lv_obj_add_event_cb(objects.btn_go_main, triggle_home_event_cb, LV_EVENT_CLICKED, NULL);
+
     // 释放互斥锁
     lvgl_port_unlock();
   }

@@ -13,28 +13,6 @@
 objects_t objects;
 lv_obj_t *tick_value_change_obj;
 
-static void event_handler_cb_main_home_home_maintain(lv_event_t *e) {
-    lv_event_code_t event = lv_event_get_code(e);
-    void *flowState = lv_event_get_user_data(e);
-    (void)flowState;
-    
-    if (event == LV_EVENT_PRESSED) {
-        e->user_data = (void *)0;
-        flowPropagateValueLVGLEvent(flowState, 7, 0, e);
-    }
-}
-
-static void event_handler_cb_manage_obj0(lv_event_t *e) {
-    lv_event_code_t event = lv_event_get_code(e);
-    void *flowState = lv_event_get_user_data(e);
-    (void)flowState;
-    
-    if (event == LV_EVENT_PRESSED) {
-        e->user_data = (void *)0;
-        flowPropagateValueLVGLEvent(flowState, 99, 0, e);
-    }
-}
-
 void create_screen_main() {
     void *flowState = getFlowState(0, 0);
     (void)flowState;
@@ -101,7 +79,6 @@ void create_screen_main() {
                             objects.home_home_maintain = obj;
                             lv_obj_set_pos(obj, 630, 4);
                             lv_obj_set_size(obj, 121, 50);
-                            lv_obj_add_event_cb(obj, event_handler_cb_main_home_home_maintain, LV_EVENT_ALL, flowState);
                             {
                                 lv_obj_t *parent_obj = obj;
                                 {
@@ -1130,11 +1107,11 @@ void create_screen_manage() {
             }
         }
         {
+            // btn_go_main
             lv_obj_t *obj = lv_btn_create(parent_obj);
-            objects.obj0 = obj;
+            objects.btn_go_main = obj;
             lv_obj_set_pos(obj, 700, 43);
             lv_obj_set_size(obj, 88, 189);
-            lv_obj_add_event_cb(obj, event_handler_cb_manage_obj0, LV_EVENT_ALL, flowState);
             {
                 lv_obj_t *parent_obj = obj;
                 {
@@ -1159,7 +1136,7 @@ void tick_screen_manage() {
 
 
 static const char *screen_names[] = { "Main", "manage" };
-static const char *object_names[] = { "main", "manage", "home_home_maintain", "obj0", "tabview", "home_home", "home_home_use", "home_home_return", "home_idcheck", "home_idcheck_ok", "home_idcheck_keyboard", "home_idcheck_textarea", "home_select", "home_select_btn0", "home_select_btn1", "home_select_btn2", "home_select_btn3", "home_select_text", "grid_1_text", "grid_2_text", "home_select_ok", "home_final", "home_final_text", "manage_btn_37", "manage_btn_38", "manage_btn_39", "manage_btn_40", "manage_btn_41", "manage_btn_42", "manage_btn_43", "manage_btn_44", "manage_btn_45", "manage_btn_46", "manage_btn_47", "manage_btn_48", "manage_btn_25", "manage_btn_26", "manage_btn_27", "manage_btn_28", "manage_btn_29", "manage_btn_30", "manage_btn_31", "manage_btn_32", "manage_btn_33", "manage_btn_34", "manage_btn_35", "manage_btn_36", "manage_btn_13", "manage_btn_14", "manage_btn_15", "manage_btn_16", "manage_btn_17", "manage_btn_18", "manage_btn_19", "manage_btn_20", "manage_btn_21", "manage_btn_22", "manage_btn_23", "manage_btn_24", "manage_btn_1", "manage_btn_2", "manage_btn_3", "manage_btn_4", "manage_btn_5", "manage_btn_6", "manage_btn_7", "manage_btn_8", "manage_btn_9", "manage_btn_10", "manage_btn_11", "manage_btn_12", "manage_btn_0" };
+static const char *object_names[] = { "main", "manage", "tabview", "home_home", "home_home_use", "home_home_return", "home_home_maintain", "home_idcheck", "home_idcheck_ok", "home_idcheck_keyboard", "home_idcheck_textarea", "home_select", "home_select_btn0", "home_select_btn1", "home_select_btn2", "home_select_btn3", "home_select_text", "grid_1_text", "grid_2_text", "home_select_ok", "home_final", "home_final_text", "manage_btn_37", "manage_btn_38", "manage_btn_39", "manage_btn_40", "manage_btn_41", "manage_btn_42", "manage_btn_43", "manage_btn_44", "manage_btn_45", "manage_btn_46", "manage_btn_47", "manage_btn_48", "manage_btn_25", "manage_btn_26", "manage_btn_27", "manage_btn_28", "manage_btn_29", "manage_btn_30", "manage_btn_31", "manage_btn_32", "manage_btn_33", "manage_btn_34", "manage_btn_35", "manage_btn_36", "manage_btn_13", "manage_btn_14", "manage_btn_15", "manage_btn_16", "manage_btn_17", "manage_btn_18", "manage_btn_19", "manage_btn_20", "manage_btn_21", "manage_btn_22", "manage_btn_23", "manage_btn_24", "manage_btn_1", "manage_btn_2", "manage_btn_3", "manage_btn_4", "manage_btn_5", "manage_btn_6", "manage_btn_7", "manage_btn_8", "manage_btn_9", "manage_btn_10", "manage_btn_11", "manage_btn_12", "manage_btn_0", "btn_go_main" };
 
 
 typedef void (*tick_screen_func_t)();
