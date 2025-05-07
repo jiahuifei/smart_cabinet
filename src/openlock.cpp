@@ -58,7 +58,7 @@ bool sendLockCommand(uint8_t b_address, uint8_t l_address) {
 }
 
 // Step 7 : 判断是否关锁，查询锁状态
-// 查询状态
+// 查询状态:1打开，0关闭，-1未知
 uint8_t queryDoorStatus(uint8_t b_address, uint8_t l_address) {
     uint8_t frame[5];
   

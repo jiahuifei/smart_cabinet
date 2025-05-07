@@ -381,7 +381,7 @@ bool RFIDReader::rfid_loop(String epc_id, uint8_t ant) {//demo函数
       TagData tag; // 修改为TagData类型
       String epc; // 用于存储EPC字符串
       unsigned long startTime = millis(); // 记录开始时间
-      const unsigned long timeout = 5000; // 设置超时时间为5秒
+      const unsigned long timeout = 3000; // 设置超时时间
 
       // 持续读取直到获取到标签或超时
       while(true){
@@ -458,7 +458,8 @@ void rfid_all_test() {
 
 }
 
-bool rfid_read_by_id(uint8_t id)//通过id直接读取指定格口的标签
+//通过id直接读取指定格口的标签
+bool rfid_read_by_id(uint8_t id)
 {
   if(id <= 32)
   {
@@ -466,7 +467,7 @@ bool rfid_read_by_id(uint8_t id)//通过id直接读取指定格口的标签
       return rfid1.cmd_read_tag(id);
     }
   }
-  else if(id > 36)
+  else if(id > 36 && id <= 48)
   {
     if(rfid2.isConnected()) {
       return rfid2.cmd_read_tag(id-36);
@@ -482,6 +483,52 @@ bool rfid_read_by_id(uint8_t id)//通过id直接读取指定格口的标签
   {
     Serial.println("无效的ID");
     return false;
+  }
+  return false;
+}
+
+//读取指定格口的指定标签
+//id:格口号
+//epc_id:标签EPC号
+bool rfidtag_read_by_id(uint8_t id, String epc_id)
+{
+  if(id <= 32)
+  {
+    if(rfid1.isConnected()) {
+      if(rfid1.rfid_loop(epc_id, id)) {
+        return true;
+      }
+      else{
+        return false;
+      }
+    }
+  }  
+  else if(id > 36 && id <= 48)
+  {
+    if(rfid2.isConnected()) {
+      if(rfid2.rfid_loop(epc_id, id-36)) {
+        return true;
+      }
+      else{
+        return false;
+      }
+    }
+  }
+  else if(id > 32 && id <= 36)
+  {
+    if(rfid2.isConnected()) {
+      if(rfid2.rfid_loop(epc_id, id-20)) {
+        return true;
+      }
+      else{
+        return false;
+      }
+    }
+  }
+  else
+  {
+    Serial.println("无效的ID");
+    return false;  
   }
   return false;
 }
