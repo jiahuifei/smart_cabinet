@@ -436,7 +436,7 @@ void CheckDoorState()
     ret = isLockOpen(inx + 1);
 
     // 更新数据库状态
-    ItemDatabase::updateItemValidState(inx + 1 , (ret == -1 ? 1:0));
+    // ItemDatabase::updateItemValidState(inx + 1 , (ret == -1 ? 1:0));
     
 
     Serial.print("Update : Current Door was ");
@@ -457,9 +457,9 @@ void CheckDoorState()
 
     bool rState = rfid_read_by_id(inx);
     // 更新数据库状态
-    ItemDatabase::updateItemValidState(inx + 1 , (ret == -1 ? 1:0));
+    // ItemDatabase::updateItemValidState(inx + 1 , (ret == -1 ? 1:0));
 
-    TagData currentTag = rfid1.read_tag_data1111111(inx + 1);
+    // TagData currentTag = rfid1.read_tag_data1111111(inx + 1);
     // TagData currentTag = ReadTagData(inx);
 
     // 根据不同场景判断判断tag数据的合法性

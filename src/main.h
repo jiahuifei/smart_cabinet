@@ -29,5 +29,6 @@
 #include "database.h"
 #include "alarm.h"
 
+#include "CellItem.h"
 
 #endif /*MAIN_H*/

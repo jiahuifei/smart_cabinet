@@ -49,6 +49,18 @@ static TripleCabinetItem tripleCabinets[36] = {
     {36, 0x01, 0x02, 0x03, 0,      0x01, 0x01, 0x01, 0x01, 0x01, 0x01}  // 格口36，未分配用户
 };
 
+
+// int cellID,int doorBoardID, int boardInterfaceID, int rfidBoardID, int rfidInterfaceID
+static CellItem tripleCabinets[1] = {
+    CellItem(1,0x01,0,0,0),
+    CellItem(1,0x01,0,0,0),
+    CellItem(1,0x01,0,0,0),
+    CellItem(1,0x01,0,0,0),
+    CellItem(1,0x01,0,0,0),
+    CellItem(1,0x01,0,0,0),
+    CellItem(1,0x01,0,0,0),
+};
+
 /**
  * 单物品格口数据库 (12个格口)
  * 每个格口包含:
@@ -72,6 +84,8 @@ static SingleCabinetItem singleCabinets[12] = {
     {47, 0x04, 0,      0x01, 0x01}, // 格口47，未分配用户
     {48, 0x04, 0,      0x01, 0x01}  // 格口48，未分配用户
 };
+
+
 
 /**
  * @brief 初始化物品数据库
