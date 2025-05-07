@@ -1,5 +1,5 @@
 #include <main.h>
-
+ 
 // 调整日志回调函数签名匹配LVGL要求
 void lvgl_log_print(const char * msg) { // 移除int level参数
     Serial.printf("[LVGL] %s\n", msg);  // 简化输出格式

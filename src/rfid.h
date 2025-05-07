@@ -20,9 +20,12 @@ struct TagData {
     uint8_t data[64];     // 足够大的缓冲区存储数据
     uint8_t dataLen;      // 数据实际长度
     uint8_t ck;
+
     bool valid;           // 标记数据是否有效
     String epcStr;        // 存储EPC的十六进制字符串
     float rssiValue;      // 计算后的RSSI值
+
+    uint8_t cellState = 0 ;   // 当前格子状态  0 正常  1 门锁装异常  2 RFID异常 
   };
   
 

@@ -374,6 +374,10 @@ TagData RFIDReader::read_tag_data() // 处理读取标签数据并返回标签�
   return tag; // 返回标签结构体
 }
 
+/*
+  EPC: 数据库唯一标识码
+  ANT: 天线号
+*/
 bool RFIDReader::rfid_loop(String epc_id, uint8_t ant) {//demo函数
   if(client.connected()){
     // 开始盘点标签

@@ -1,4 +1,5 @@
 #include "main.h"
+#include "database.h"
 
 /**
  * 三物品格口数据库 (36个格口)
@@ -209,6 +210,7 @@ bool ItemDatabase::updateItemStatus(uint8_t cabinetId, uint8_t itemIndex, uint8_
     
     return false; // 更新失败
 }
+
 
 /**
  * @brief 打印数据库内容（调试用）

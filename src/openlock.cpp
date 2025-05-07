@@ -78,7 +78,7 @@ bool queryDoorStatus(uint8_t b_address, uint8_t l_address) {
 
     // 等待并检查响应
     unsigned long startTime = millis();
-    while(millis() - startTime < 5000) { // 等待5秒超时
+    while(millis() - startTime < 1000) { // 等待5秒超时
       uint8_t available = RS485.available();
       if(available >= 5) {
         uint8_t response[5];

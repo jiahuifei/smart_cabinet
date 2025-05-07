@@ -56,6 +56,7 @@ public:
     // 更新物品状态
     static bool updateItemStatus(uint8_t cabinetId, uint8_t itemIndex, uint8_t newStatus);
     
+    
     // 打印数据库内容（调试用）
     static void printDatabase();
 };
