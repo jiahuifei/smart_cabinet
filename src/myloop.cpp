@@ -306,6 +306,7 @@ void show_blocking_dialog(const char* msg) {
   lv_obj_align(spinner, LV_ALIGN_BOTTOM_MID, 0, -20);
 }
 
+// !!!
 bool isRfid1(int cabinetId){
   uint8_t cabinetType = ItemDatabase::getCabinetType(cabinetId);
     
@@ -423,10 +424,20 @@ void CheckDoorState()
       Serial.println("Update : Current Index Can't skip");
     }
 
-    bool ret = false;
+    uint8_t ret = -1;
+
+    /*
+       0  关
+       1  开
+      -1  错误
+    */
 
     // 发送门状态查询指令
-    ret = isLockOpen(inx);
+    ret = isLockOpen(inx + 1);
+
+    // 更新数据库状态
+    ItemDatabase::updateItemValidState(inx + 1 , (ret == -1 ? 1:0));
+    
 
     Serial.print("Update : Current Door was ");
     Serial.println((ret == true? "":"Openning : Close"));
@@ -444,7 +455,12 @@ void CheckDoorState()
       break;
     }
 
-    TagData currentTag = ReadTagData(inx);
+    bool rState = rfid_read_by_id(inx);
+    // 更新数据库状态
+    ItemDatabase::updateItemValidState(inx + 1 , (ret == -1 ? 1:0));
+
+    TagData currentTag = rfid1.read_tag_data1111111(inx + 1);
+    // TagData currentTag = ReadTagData(inx);
 
     // 根据不同场景判断判断tag数据的合法性
     // 物资被取走，对应物资类别能匹配

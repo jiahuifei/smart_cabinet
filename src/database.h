@@ -21,9 +21,13 @@ typedef struct {
     uint8_t itemReserveStatus1;       // 物品1预约状态
     uint8_t itemReserveStatus2;       // 物品2预约状态
     uint8_t itemReserveStatus3;       // 物品3预约状态
+    
     uint8_t itemActualStatus1;        // 物品1实际状态
     uint8_t itemActualStatus2;        // 物品2实际状态
     uint8_t itemActualStatus3;        // 物品3实际状态
+
+    uint8_t lockState = 0;            // 0 门锁正常  1 门锁异常
+    uint8_t rfidState = 0;            // 0 RFID正常  1 RFID异常
 } TripleCabinetItem;
 
 // 单物品格口结构体
@@ -32,7 +36,7 @@ typedef struct {
     uint8_t itemId;                   // 物品编号
     uint32_t userId;                  // 用户ID (六位数字)
     uint8_t itemReserveStatus;        // 物品预约状态
-    uint8_t itemActualStatus;         // 物品实际状态
+    uint8_t itemActualStatus;         // 物品实际状态  0 没有  1 有
 } SingleCabinetItem;
 
 // 数据库类
