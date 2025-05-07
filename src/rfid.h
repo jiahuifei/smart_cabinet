@@ -67,5 +67,6 @@ extern RFIDReader rfid2;
 
 void rfid_all_init();
 void rfid_all_test();
+bool rfid_read_by_id(uint8_t id);
 
 #endif // !RFID_H

@@ -457,3 +457,31 @@ void rfid_all_test() {
   
 
 }
+
+bool rfid_read_by_id(uint8_t id)//通过id直接读取指定格口的标签
+{
+  if(id <= 32)
+  {
+    if(rfid1.isConnected()) {
+      return rfid1.cmd_read_tag(id);
+    }
+  }
+  else if(id > 36)
+  {
+    if(rfid2.isConnected()) {
+      return rfid2.cmd_read_tag(id-36);
+    } 
+  }
+  else if(id > 32 && id <= 36)
+  {
+    if(rfid2.isConnected()) {
+      return rfid2.cmd_read_tag(id-20);
+    } 
+  }
+  else
+  {
+    Serial.println("无效的ID");
+    return false;
+  }
+  return false;
+}
