@@ -58,8 +58,8 @@ bool sendLockCommand(uint8_t b_address, uint8_t l_address) {
 }
 
 // Step 7 : 判断是否关锁，查询锁状态
-// 查询状态
-bool queryDoorStatus(uint8_t b_address, uint8_t l_address) {
+// 查询状态:1打开，0关闭，-1未知
+uint8_t queryDoorStatus(uint8_t b_address, uint8_t l_address) {
     uint8_t frame[5];
   
     // 构建命令帧
@@ -93,22 +93,22 @@ bool queryDoorStatus(uint8_t b_address, uint8_t l_address) {
           Serial.println();
           if(response[3] == 0x11) {
             Serial.println("打开状态");
-            return true; 
+            return 1; 
           }
           else if(response[3] == 0x00){
             Serial.println("关闭状态");
-            return false;
+            return 0;
           }
           else{
             Serial.println("未知错误");
-            return false;
+            return -1;
           }
         }
       }
       delay(10);  
     }
     Serial.println("开锁指令发送失败或超时");
-    return false;
+    return -1;
 }
 
 void openAllLock(uint8_t b_address) {
@@ -169,7 +169,7 @@ bool directOpenLockById(int lockId) {
 }
 
 // 通过锁ID直接读取状态
-bool isLockOpen(int lockId) {
+uint8_t isLockOpen(int lockId) {
     uint8_t boardNo = 0;
     uint8_t lockNo = 0;
     
@@ -188,7 +188,7 @@ bool isLockOpen(int lockId) {
         lockNo = lockId - 36;
     }else {
         Serial.println("无效的锁ID");
-        return false;
+        return -1;
     }
     Serial.printf("映射结果: 板地址=0x%02X, 锁地址=0x%02X\n", boardNo, lockNo);
     return queryDoorStatus(boardNo, lockNo);

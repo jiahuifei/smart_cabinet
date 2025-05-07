@@ -10,7 +10,7 @@
 
 
 bool directOpenLockById(int lockId);
-bool isLockOpen(int lockId);
+uint8_t isLockOpen(int lockId);
 void rs485_init();
 
 #endif // !1
